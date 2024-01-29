@@ -1,8 +1,11 @@
 use crate::clients::player_client::PlayerClient;
 use reqwest::header::{HeaderMap, HeaderValue};
 
-mod clients;
-mod responses;
+/// Individual clients for each endpoint
+pub mod clients;
+
+/// Responses for each endpoint
+pub mod responses;
 
 const BASE_URL: &str = "https://api.wiseoldman.net/v2";
 
@@ -26,6 +29,7 @@ impl ApiEndpoint {
     }
 }
 
+/// Wise Old Man Client
 pub struct WomClient {
     client: reqwest::Client,
     base_url: String,
@@ -61,15 +65,20 @@ impl WomClient {
         }
     }
 
+    ///Creates a new `WOMClient`
     pub fn new() -> Self {
         let client = WomClient::new_reqwest_client(None);
         Self::new_wom_client(client, BASE_URL.to_string())
     }
 
+    ///Creates a new `WOMClient` with an API key
     pub fn new_with_key(api_key: String) -> Self {
         let client = WomClient::new_reqwest_client(Some(api_key));
         Self::new_wom_client(client, BASE_URL.to_string())
     }
+
+    ///Creates a new `WOMClient` with a custom base URL, and optionally an API key.
+    /// Used for testing and self hosted/League WOM instances
     pub fn new_with_base_url(base_url: String, api_key: Option<String>) -> Self {
         let client = WomClient::new_reqwest_client(api_key);
         Self::new_wom_client(client, base_url)
