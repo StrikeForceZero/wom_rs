@@ -1,7 +1,8 @@
 use crate::helpers::{handle_empty_response, handle_response, pagination_to_query};
 use crate::responses::player_responses::{Player, PlayerDetails, SnapShot};
 use crate::{ApiEndpoint, Pagination};
-use reqwest::Error;
+use anyhow::Result;
+use reqwest::{Error, StatusCode};
 
 type Username = String;
 
@@ -67,7 +68,7 @@ impl PlayerClient {
         &self,
         username: Username,
         pagination: Option<Pagination>,
-    ) -> Result<Vec<Player>, Error> {
+    ) -> Result<Vec<Player>, anyhow::Error> {
         let pagination_query = pagination_to_query(pagination);
 
         let full_url = format!(
@@ -79,13 +80,16 @@ impl PlayerClient {
         handle_response::<Vec<Player>>(result).await
     }
 
-    pub async fn update_player(&self, username: Username) -> Result<PlayerDetails, Error> {
+    pub async fn update_player(&self, username: Username) -> Result<PlayerDetails, anyhow::Error> {
         let full_url = self.get_url(PlayerEndPoints::Update(username));
         let result = self.client.post(full_url.as_str()).send().await;
         handle_response::<PlayerDetails>(result).await
     }
 
-    pub async fn get_player_snap_shots(&self, username: Username) -> Result<Vec<SnapShot>, Error> {
+    pub async fn get_player_snap_shots(
+        &self,
+        username: Username,
+    ) -> Result<Vec<SnapShot>, anyhow::Error> {
         let result = self
             .client
             .get(self.get_url(PlayerEndPoints::Snapshots(username)).as_str())

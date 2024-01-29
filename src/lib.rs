@@ -1,4 +1,5 @@
 use crate::clients::player_client::PlayerClient;
+use anyhow::{Context, Result};
 use reqwest::header::{HeaderMap, HeaderValue};
 
 /// Individual clients for each endpoint
@@ -86,9 +87,12 @@ impl WomClient {
 }
 
 pub(crate) mod helpers {
+    use crate::responses::error_responses::ErrorResponse;
     use crate::Pagination;
-    use reqwest::{Error, Response};
+    use anyhow::anyhow;
+    use reqwest::{Error, Response, StatusCode};
     use serde::de::DeserializeOwned;
+    use std::io::ErrorKind;
 
     pub fn pagination_to_query(pagination: Option<Pagination>) -> String {
         match pagination {
@@ -103,16 +107,32 @@ pub(crate) mod helpers {
 
     pub async fn handle_response<ResponseType: DeserializeOwned>(
         response: Result<Response, Error>,
-    ) -> Result<ResponseType, Error> {
+    ) -> Result<ResponseType, anyhow::Error> {
         match response {
-            Ok(result) => {
-                let body = result.json::<ResponseType>().await;
-                match body {
-                    Ok(body) => Ok(body),
-                    Err(err) => Err(err),
+            Ok(result) => match result.status() {
+                StatusCode::OK => {
+                    let body = result.json::<ResponseType>().await;
+                    match body {
+                        Ok(body) => Ok(body),
+                        Err(err) => Err(anyhow!(err)),
+                    }
                 }
-            }
-            Err(err) => Err(err),
+                StatusCode::NOT_FOUND => {
+                    let error_body = result.json::<ErrorResponse>().await;
+                    match error_body {
+                        Ok(body) => Err(anyhow!(body.message)),
+                        Err(err) => Err(anyhow!(err)),
+                    }
+                }
+                _ => {
+                    let error_body = result.json::<ErrorResponse>().await;
+                    match error_body {
+                        Ok(body) => Err(anyhow!(body.message)),
+                        Err(err) => Err(anyhow!(err)),
+                    }
+                }
+            },
+            Err(err) => Err(anyhow!(err)),
         }
     }
 
