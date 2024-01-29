@@ -1,5 +1,5 @@
-use crate::helpers::{handle_response, pagination_to_query};
-use crate::responses::player_responses::{Player, SnapShot};
+use crate::helpers::{handle_empty_response, handle_response, pagination_to_query};
+use crate::responses::player_responses::{Player, PlayerDetails, SnapShot};
 use crate::{ApiEndpoint, Pagination};
 use reqwest::Error;
 
@@ -7,7 +7,7 @@ type Username = String;
 
 enum PlayerEndPoints {
     Search(Username),
-    Update,
+    Update(Username),
     AssertType,
     Details,
     DetailsById,
@@ -33,6 +33,9 @@ impl PlayerEndPoints {
                     ApiEndpoint::Player.as_str(),
                     username
                 )
+            }
+            PlayerEndPoints::Update(username) => {
+                format!("{}/{}", ApiEndpoint::Player.as_str(), username)
             }
             PlayerEndPoints::Snapshots(username) => {
                 format!("{}/{}/snapshots", ApiEndpoint::Player.as_str(), username)
@@ -76,6 +79,12 @@ impl PlayerClient {
         handle_response::<Vec<Player>>(result).await
     }
 
+    pub async fn update_player(&self, username: Username) -> Result<PlayerDetails, Error> {
+        let full_url = self.get_url(PlayerEndPoints::Update(username));
+        let result = self.client.post(full_url.as_str()).send().await;
+        handle_response::<PlayerDetails>(result).await
+    }
+
     pub async fn get_player_snap_shots(&self, username: Username) -> Result<Vec<SnapShot>, Error> {
         let result = self
             .client
@@ -88,7 +97,7 @@ impl PlayerClient {
 
 #[cfg(test)]
 mod tests {
-    use crate::WomClient;
+    use crate::{Pagination, WomClient};
     use httpmock::prelude::*;
     use httpmock::{Mock, Then, When};
 
@@ -121,11 +130,63 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn player_search_check_pagination_test() {
+        let server = MockServer::start();
+        let mock = server.mock(|when, then| {
+            when.method(GET)
+                .path(format!("{}/search", BASE_URL))
+                .query_param("limit", "10")
+                .query_param("offset", "10")
+                .query_param_exists("username");
+            then.status(200)
+                .header(CONTENT_TYPE, APPLICATION_JSON)
+                .body_from_file("./tests/mocks/player_search.json");
+        });
+
+        let pagination = Some(Pagination {
+            limit: Some(10),
+            offset: Some(10),
+        });
+
+        let wom_client = WomClient::new_with_base_url(server.base_url().to_string(), None);
+        let result = wom_client
+            .player_client
+            .search("Zezima".to_string(), pagination)
+            .await;
+
+        mock.assert();
+        assert!(result.is_ok());
+        let players = result.unwrap();
+        assert_eq!(players.len(), 2);
+    }
+
+    #[tokio::test]
+    async fn player_update_test() {
+        let server = MockServer::start();
+        let mock = server.mock(|when, then| {
+            when.method(POST).path(format!("{}/Zezima", BASE_URL));
+            then.status(200)
+                .header(CONTENT_TYPE, APPLICATION_JSON)
+                .body_from_file("./tests/mocks/player_details.json");
+        });
+
+        let wom_client = WomClient::new_with_base_url(server.base_url().to_string(), None);
+        let result = wom_client
+            .player_client
+            .update_player("Zezima".to_string())
+            .await;
+        println!("{:?}", result);
+
+        mock.assert();
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
     async fn player_snapshots_test() {
         let server = MockServer::start();
         let mock = server.mock(|when, then| {
             when.method(GET)
-                .path(format!("{}/Zezima/snapshots", BASE_URL));
+                .path(format!("{}/IFat%20Fingers/snapshots", BASE_URL));
             then.status(200)
                 .header(CONTENT_TYPE, APPLICATION_JSON)
                 .body_from_file("./tests/mocks/player_snapshots.json");
@@ -134,7 +195,7 @@ mod tests {
         let wom_client = WomClient::new_with_base_url(server.base_url().to_string(), None);
         let result = wom_client
             .player_client
-            .get_player_snap_shots("Zezima".to_string())
+            .get_player_snap_shots("IFat Fingers".to_string())
             .await;
 
         mock.assert();

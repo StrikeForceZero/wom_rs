@@ -1,4 +1,4 @@
-use crate::responses::global_enums::{Activity, Boss, Skill};
+use crate::responses::global_enums::{Activity, Boss, ComputedMetricEnum, Skill};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -136,8 +136,21 @@ pub struct Activities {
 #[serde(rename_all = "camelCase")]
 pub struct ActivityMetric {
     pub metric: Activity,
-    pub experience: i64,
+    pub score: i64,
     pub rank: i64,
-    pub level: i64,
-    pub ehp: f64,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Computed {
+    pub ehp: ComputedMetric,
+    pub ehb: ComputedMetric,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ComputedMetric {
+    pub metric: ComputedMetricEnum,
+    pub value: f64,
+    pub rank: i64,
 }

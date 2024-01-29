@@ -1,5 +1,4 @@
-use crate::responses::global_enums::Skill;
-use crate::responses::snapshot_responses::{Bosses, Skills};
+use crate::responses::snapshot_responses::{Activities, Bosses, Computed, Skills};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
@@ -304,15 +303,17 @@ pub enum AchievementMeasure {
     Value,
 }
 
+/// [SnapShot Data Values](https://docs.wiseoldman.net/players-api/player-type-definitions#object-snapshot-data-values)
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SnapShotData {
     pub skills: Skills,
     pub bosses: Bosses,
-    // pub activities: Activities,
-    // pub computed: Computed,
+    pub activities: Activities,
+    pub computed: Computed,
 }
 
+/// [SnapShot](https://docs.wiseoldman.net/players-api/player-type-definitions#object-snapshot)
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SnapShot {
@@ -382,7 +383,7 @@ pub struct PlayerDetails {
     pub last_changed_at: Option<DateTime<Utc>>,
     pub last_imported_at: Option<DateTime<Utc>>,
     pub combat_level: i64,
-    pub archive: PlayerArchive,
+    pub archive: Option<PlayerArchive>,
     pub latest_snapshot: Option<SnapShot>,
 }
 

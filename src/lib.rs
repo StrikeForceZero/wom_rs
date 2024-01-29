@@ -93,7 +93,7 @@ pub(crate) mod helpers {
     pub fn pagination_to_query(pagination: Option<Pagination>) -> String {
         match pagination {
             Some(p) => format!(
-                "limit={}&offset={}",
+                "&limit={}&offset={}",
                 p.limit.unwrap_or(20),
                 p.offset.unwrap_or(0)
             ),
@@ -112,6 +112,13 @@ pub(crate) mod helpers {
                     Err(err) => Err(err),
                 }
             }
+            Err(err) => Err(err),
+        }
+    }
+
+    pub fn handle_empty_response(response: Result<Response, Error>) -> Result<(), Error> {
+        match response {
+            Ok(_) => Ok(()),
             Err(err) => Err(err),
         }
     }
