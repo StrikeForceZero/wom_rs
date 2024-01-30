@@ -333,7 +333,24 @@ pub struct Achievement {
     metric: String,
     measure: AchievementMeasure,
     threshold: i64,
+    created_at: DateTime<Utc>,
     accuracy: Option<i64>,
+}
+
+/// [Achievement Progress](https://docs.wiseoldman.net/players-api/player-type-definitions#object-achievement-progress)
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AchievementProgress {
+    player_id: i64,
+    name: String,
+    metric: String,
+    measure: AchievementMeasure,
+    threshold: i64,
+    created_at: Option<DateTime<Utc>>,
+    accuracy: Option<i64>,
+    current_value: i64,
+    absolute_progress: f64,
+    relative_progress: f64,
 }
 
 /// [Player](https://docs.wiseoldman.net/players-api/player-type-definitions#object-player)
@@ -397,4 +414,12 @@ pub struct PlayerArchive {
     pub restored_username: Option<String>,
     pub created_at: DateTime<Utc>,
     pub restored_at: Option<DateTime<Utc>>,
+}
+
+/// Same as [Player](Player) but has change to signify if the player was changed with assertion
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AssertPlayerType {
+    pub player: Player,
+    pub changed: bool,
 }
