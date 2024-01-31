@@ -8,7 +8,7 @@ use crate::models::group::PlayerMembership;
 use crate::models::player::{
     Achievement, AchievementProgress, AssertPlayerType, Player, PlayerDetails, PlayerGain, SnapShot,
 };
-use crate::{ApiEndpoint, Pagination, QueryParam};
+use crate::{ApiEndpoint, Pagination, QueryParam, QueryParams};
 use anyhow::Result;
 use chrono::{DateTime, Utc};
 use std::fmt::Formatter;
@@ -101,8 +101,16 @@ impl PlayerClient {
         }
     }
 
-    fn get_url(&self, endpoint: PlayerEndPoints) -> String {
-        format!("{}{}", self.base_url, endpoint.url())
+    fn get_url(&self, endpoint: PlayerEndPoints, query_params: Option<QueryParams>) -> String {
+        let base_url_with_endpoint = format!("{}{}", self.base_url, endpoint.url());
+        match query_params {
+            Some(params) => format!(
+                "{}{}",
+                base_url_with_endpoint,
+                query_params_to_string(&params)
+            ),
+            None => base_url_with_endpoint,
+        }
     }
 
     /// Search for players by username, takes an optional pagination parameter
@@ -119,11 +127,7 @@ impl PlayerClient {
         let username_query: QueryParam = ("username".to_string(), username.to_string());
         queries.push(username_query);
 
-        let full_url = format!(
-            "{}{}",
-            self.get_url(PlayerEndPoints::Search),
-            query_params_to_string(&queries)
-        );
+        let full_url = self.get_url(PlayerEndPoints::Search, Some(queries));
         let result = self.client.get(full_url.as_str()).send().await;
         handle_response::<Vec<Player>>(result).await
     }
@@ -131,7 +135,7 @@ impl PlayerClient {
     /// Sends a request to update the players hiscore data from the offical hiscores
     /// [Player Update](https://docs.wiseoldman.net/players-api/player-endpoints#update-a-player)
     pub async fn update(&self, username: Username) -> Result<PlayerDetails, anyhow::Error> {
-        let full_url = self.get_url(PlayerEndPoints::Update(username));
+        let full_url = self.get_url(PlayerEndPoints::Update(username), None);
         let result = self.client.post(full_url.as_str()).send().await;
         handle_response::<PlayerDetails>(result).await
     }
@@ -141,7 +145,10 @@ impl PlayerClient {
     pub async fn assert_type(&self, username: Username) -> Result<AssertPlayerType, anyhow::Error> {
         let result = self
             .client
-            .post(self.get_url(PlayerEndPoints::AssertType(username)).as_str())
+            .post(
+                self.get_url(PlayerEndPoints::AssertType(username), None)
+                    .as_str(),
+            )
             .send()
             .await;
         handle_response::<AssertPlayerType>(result).await
@@ -152,7 +159,10 @@ impl PlayerClient {
     pub async fn get_details(&self, username: Username) -> Result<PlayerDetails, anyhow::Error> {
         let result = self
             .client
-            .get(self.get_url(PlayerEndPoints::Details(username)).as_str())
+            .get(
+                self.get_url(PlayerEndPoints::Details(username), None)
+                    .as_str(),
+            )
             .send()
             .await;
         handle_response::<PlayerDetails>(result).await
@@ -167,7 +177,7 @@ impl PlayerClient {
         let result = self
             .client
             .get(
-                self.get_url(PlayerEndPoints::DetailsById(player_id))
+                self.get_url(PlayerEndPoints::DetailsById(player_id), None)
                     .as_str(),
             )
             .send()
@@ -184,7 +194,7 @@ impl PlayerClient {
         let result = self
             .client
             .get(
-                self.get_url(PlayerEndPoints::Achievements(username))
+                self.get_url(PlayerEndPoints::Achievements(username), None)
                     .as_str(),
             )
             .send()
@@ -201,7 +211,7 @@ impl PlayerClient {
         let result = self
             .client
             .get(
-                self.get_url(PlayerEndPoints::AchievementsProgress(username))
+                self.get_url(PlayerEndPoints::AchievementsProgress(username), None)
                     .as_str(),
             )
             .send()
@@ -227,7 +237,7 @@ impl PlayerClient {
 
         let full_url = format!(
             "{}{}",
-            self.get_url(PlayerEndPoints::Competitions(username)),
+            self.get_url(PlayerEndPoints::Competitions(username), None),
             query_params_to_string(&queries)
         );
 
@@ -244,7 +254,7 @@ impl PlayerClient {
     ) -> Result<Vec<PlayerCompetitionStanding>, anyhow::Error> {
         let full_url = format!(
             "{}{}",
-            self.get_url(PlayerEndPoints::CompetitionsStandings(username)),
+            self.get_url(PlayerEndPoints::CompetitionsStandings(username), None),
             query_params_to_string(&vec![(
                 "status".to_string(),
                 competition_status.as_str().to_string()
@@ -268,7 +278,7 @@ impl PlayerClient {
 
         let full_url = format!(
             "{}{}",
-            self.get_url(PlayerEndPoints::GroupMembership(username)),
+            self.get_url(PlayerEndPoints::GroupMembership(username), None),
             query_params_to_string(&queries)
         );
 
@@ -283,10 +293,9 @@ impl PlayerClient {
         username: Username,
         period: Period,
     ) -> Result<PlayerGain, anyhow::Error> {
-        let full_url = format!(
-            "{}?period={}",
-            self.get_url(PlayerEndPoints::Gains(username)),
-            period.as_str()
+        let full_url = self.get_url(
+            PlayerEndPoints::Gains(username),
+            Some(vec![("period".to_string(), period.as_str().to_string())]),
         );
         let result = self.client.get(full_url).send().await;
         handle_response::<PlayerGain>(result).await
@@ -300,12 +309,20 @@ impl PlayerClient {
         start_date: DateTime<Utc>,
         end_date: DateTime<Utc>,
     ) -> Result<PlayerGain, anyhow::Error> {
-        let full_url = format!(
-            "{}?startDate={}&endDate={}",
-            self.get_url(PlayerEndPoints::Gains(username)),
-            start_date.format("%Y-%m-%d %H:%M:%S"),
-            end_date.format("%Y-%m-%d %H:%M:%S")
+        let full_url = self.get_url(
+            PlayerEndPoints::Gains(username),
+            Some(vec![
+                (
+                    "startDate".to_string(),
+                    start_date.format("%Y-%m-%d %H:%M:%S").to_string(),
+                ),
+                (
+                    "endDate".to_string(),
+                    end_date.format("%Y-%m-%d %H:%M:%S").to_string(),
+                ),
+            ]),
         );
+
         let result = self.client.get(full_url).send().await;
         handle_response::<PlayerGain>(result).await
     }
@@ -326,12 +343,11 @@ impl PlayerClient {
             queries.push(("metric".to_string(), metric.to_string()));
         }
 
-        let full_url = format!(
-            "{}{}",
-            self.get_url(PlayerEndPoints::Records(username)),
-            query_params_to_string(&queries)
-        );
-        let result = self.client.get(full_url).send().await;
+        let result = self
+            .client
+            .get(self.get_url(PlayerEndPoints::Records(username), Some(queries)))
+            .send()
+            .await;
         handle_response::<Vec<crate::models::record::Record>>(result).await
     }
 
