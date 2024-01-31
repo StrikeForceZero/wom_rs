@@ -1,4 +1,4 @@
-use crate::responses::global_enums::{Activity, Boss, ComputedMetricEnum, Skill};
+use crate::models::global_enums::{Activity, Boss, ComputedMetricEnum, Skill};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

@@ -1,4 +1,5 @@
-use crate::responses::snapshot_responses::{Activities, Bosses, Computed, Skills};
+use crate::models::global_types::PlayerId;
+use crate::models::snapshot::{Activities, Bosses, Computed, Skills};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
@@ -324,40 +325,11 @@ pub struct SnapShot {
     data: SnapShotData,
 }
 
-/// [Achievement](https://docs.wiseoldman.net/players-api/player-type-definitions#object-achievement)
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Achievement {
-    player_id: i64,
-    name: String,
-    metric: String,
-    measure: AchievementMeasure,
-    threshold: i64,
-    created_at: DateTime<Utc>,
-    accuracy: Option<i64>,
-}
-
-/// [Achievement Progress](https://docs.wiseoldman.net/players-api/player-type-definitions#object-achievement-progress)
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct AchievementProgress {
-    player_id: i64,
-    name: String,
-    metric: String,
-    measure: AchievementMeasure,
-    threshold: i64,
-    created_at: Option<DateTime<Utc>>,
-    accuracy: Option<i64>,
-    current_value: i64,
-    absolute_progress: f64,
-    relative_progress: f64,
-}
-
 /// [Player](https://docs.wiseoldman.net/players-api/player-type-definitions#object-player)
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Player {
-    pub id: i64,
+    pub id: PlayerId,
     pub username: String,
     pub display_name: String,
     #[serde(rename = "type")]
@@ -381,7 +353,7 @@ pub struct Player {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PlayerDetails {
-    pub id: i64,
+    pub id: PlayerId,
     pub username: String,
     pub display_name: String,
     #[serde(rename = "type")]
@@ -404,11 +376,40 @@ pub struct PlayerDetails {
     pub latest_snapshot: Option<SnapShot>,
 }
 
+/// [Achievement](https://docs.wiseoldman.net/players-api/player-type-definitions#object-achievement)
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Achievement {
+    player_id: i64,
+    name: String,
+    metric: String,
+    measure: AchievementMeasure,
+    threshold: i64,
+    created_at: DateTime<Utc>,
+    accuracy: Option<i64>,
+}
+
+/// [Achievement Progress](https://docs.wiseoldman.net/players-api/player-type-definitions#object-achievement-progress)
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AchievementProgress {
+    player_id: PlayerId,
+    name: String,
+    metric: String,
+    measure: AchievementMeasure,
+    threshold: i64,
+    created_at: Option<DateTime<Utc>>,
+    accuracy: Option<i64>,
+    current_value: i64,
+    absolute_progress: f64,
+    relative_progress: f64,
+}
+
 /// [Player Archive](https://docs.wiseoldman.net/players-api/player-type-definitions#object-player-archive)
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PlayerArchive {
-    pub player_id: i64,
+    pub player_id: PlayerId,
     pub previous_username: String,
     pub archive_username: String,
     pub restored_username: Option<String>,
@@ -416,7 +417,7 @@ pub struct PlayerArchive {
     pub restored_at: Option<DateTime<Utc>>,
 }
 
-/// Same as [Player](Player) but has change to signify if the player was changed with assertion
+/// Same as [Player] but has changed to signify if the player was changed with assertion
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AssertPlayerType {

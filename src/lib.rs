@@ -1,12 +1,11 @@
 use crate::clients::player_client::PlayerClient;
-use anyhow::{Context, Result};
 use reqwest::header::{HeaderMap, HeaderValue};
 
 /// Individual clients for each endpoint
 pub mod clients;
 
 /// Responses for each endpoint
-pub mod responses;
+pub mod models;
 
 const BASE_URL: &str = "https://api.wiseoldman.net/v2";
 
@@ -32,8 +31,6 @@ impl ApiEndpoint {
 
 /// Wise Old Man Client
 pub struct WomClient {
-    client: reqwest::Client,
-    base_url: String,
     pub player_client: PlayerClient,
 }
 
@@ -60,8 +57,6 @@ impl WomClient {
     fn new_wom_client(client: reqwest::Client, base_url: String) -> Self {
         let sub_client_base_url = base_url.clone();
         Self {
-            client: client.clone(),
-            base_url,
             player_client: PlayerClient::new(client.clone(), &*sub_client_base_url),
         }
     }
@@ -87,12 +82,11 @@ impl WomClient {
 }
 
 pub(crate) mod helpers {
-    use crate::responses::error_responses::ErrorResponse;
+    use crate::models::error::ErrorResponse;
     use crate::Pagination;
     use anyhow::anyhow;
     use reqwest::{Error, Response, StatusCode};
     use serde::de::DeserializeOwned;
-    use std::io::ErrorKind;
 
     pub fn pagination_to_query(pagination: Option<Pagination>) -> String {
         match pagination {
@@ -145,6 +139,4 @@ pub(crate) mod helpers {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-}
+mod tests {}

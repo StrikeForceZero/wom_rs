@@ -1,22 +1,19 @@
-use crate::helpers::{handle_empty_response, handle_response, pagination_to_query};
-use crate::responses::player_responses::{
-    Achievement, AssertPlayerType, Player, PlayerDetails, SnapShot,
+use crate::helpers::{handle_response, pagination_to_query};
+use crate::models::global_types::{PlayerId, Username};
+use crate::models::player::{
+    Achievement, AchievementProgress, AssertPlayerType, Player, PlayerDetails, SnapShot,
 };
 use crate::{ApiEndpoint, Pagination};
 use anyhow::Result;
-use reqwest::{Error, StatusCode};
-
-type Username = String;
-type PlayerID = i64;
 
 enum PlayerEndPoints {
     Search(Username),
     Update(Username),
     AssertType(Username),
     Details(Username),
-    DetailsById(PlayerID),
+    DetailsById(PlayerId),
     Achievements(Username),
-    AchievementsProgress,
+    AchievementsProgress(Username),
     Competitions,
     CompetitionsStandings,
     GroupMembership,
@@ -55,6 +52,13 @@ impl PlayerEndPoints {
             }
             PlayerEndPoints::Achievements(username) => {
                 format!("{}/{}/achievements", ApiEndpoint::Player.as_str(), username)
+            }
+            PlayerEndPoints::AchievementsProgress(username) => {
+                format!(
+                    "{}/{}/achievements/progress",
+                    ApiEndpoint::Player.as_str(),
+                    username
+                )
             }
             _ => format!("{}", ApiEndpoint::Player.as_str()),
         }
@@ -137,7 +141,7 @@ impl PlayerClient {
     /// [Player Details](https://docs.wiseoldman.net/players-api/player-endpoints#get-player-details-by-id)
     pub async fn get_player_details_by_id(
         &self,
-        player_id: PlayerID,
+        player_id: PlayerId,
     ) -> Result<PlayerDetails, anyhow::Error> {
         let result = self
             .client
@@ -165,6 +169,23 @@ impl PlayerClient {
             .send()
             .await;
         handle_response::<Vec<Achievement>>(result).await
+    }
+
+    /// Get a player's achievements progress by username
+    /// [Player Achievements Progress](https://docs.wiseoldman.net/players-api/player-endpoints#get-player-achievement-progress)
+    pub async fn get_player_achievement_progress(
+        &self,
+        username: Username,
+    ) -> Result<Vec<AchievementProgress>, anyhow::Error> {
+        let result = self
+            .client
+            .get(
+                self.get_url(PlayerEndPoints::AchievementsProgress(username))
+                    .as_str(),
+            )
+            .send()
+            .await;
+        handle_response::<Vec<AchievementProgress>>(result).await
     }
 
     pub async fn get_player_snap_shots(
@@ -198,7 +219,7 @@ mod tests {
                 .query_param_exists("username");
             then.status(200)
                 .header(CONTENT_TYPE, APPLICATION_JSON)
-                .body_from_file("./tests/mocks/player_search.json");
+                .body_from_file("./tests/mocks/player/player_search.json");
         });
 
         let wom_client = WomClient::new_with_base_url(server.base_url().to_string(), None);
@@ -224,7 +245,7 @@ mod tests {
                 .query_param_exists("username");
             then.status(200)
                 .header(CONTENT_TYPE, APPLICATION_JSON)
-                .body_from_file("./tests/mocks/player_search.json");
+                .body_from_file("./tests/mocks/player/player_search.json");
         });
 
         let pagination = Some(Pagination {
@@ -251,7 +272,7 @@ mod tests {
             when.method(POST).path(format!("{}/Zezima", BASE_URL));
             then.status(200)
                 .header(CONTENT_TYPE, APPLICATION_JSON)
-                .body_from_file("./tests/mocks/player_details.json");
+                .body_from_file("./tests/mocks/player/player_details.json");
         });
 
         let wom_client = WomClient::new_with_base_url(server.base_url().to_string(), None);
@@ -273,7 +294,7 @@ mod tests {
                 .path(format!("{}/Zezima/assert-type", BASE_URL));
             then.status(200)
                 .header(CONTENT_TYPE, APPLICATION_JSON)
-                .body_from_file("./tests/mocks/player_assert_type.json");
+                .body_from_file("./tests/mocks/player/player_assert_type.json");
         });
 
         let wom_client = WomClient::new_with_base_url(server.base_url().to_string(), None);
@@ -295,7 +316,7 @@ mod tests {
                 .path(format!("{}/IFat%20Fingers/snapshots", BASE_URL));
             then.status(200)
                 .header(CONTENT_TYPE, APPLICATION_JSON)
-                .body_from_file("./tests/mocks/player_snapshots.json");
+                .body_from_file("./tests/mocks/player/player_snapshots.json");
         });
 
         let wom_client = WomClient::new_with_base_url(server.base_url().to_string(), None);
@@ -319,7 +340,7 @@ mod tests {
                 .path(format!("{}/IFat%20Fingers", BASE_URL));
             then.status(200)
                 .header(CONTENT_TYPE, APPLICATION_JSON)
-                .body_from_file("./tests/mocks/player_details.json");
+                .body_from_file("./tests/mocks/player/player_details.json");
         });
 
         let wom_client = WomClient::new_with_base_url(server.base_url().to_string(), None);
@@ -339,7 +360,7 @@ mod tests {
             when.method(GET).path(format!("{}/id/1", BASE_URL));
             then.status(200)
                 .header(CONTENT_TYPE, APPLICATION_JSON)
-                .body_from_file("./tests/mocks/player_details.json");
+                .body_from_file("./tests/mocks/player/player_details.json");
         });
 
         let wom_client = WomClient::new_with_base_url(server.base_url().to_string(), None);
@@ -359,7 +380,7 @@ mod tests {
                 .path(format!("{}/IFat%20Fingers/achievements", BASE_URL));
             then.status(200)
                 .header(CONTENT_TYPE, APPLICATION_JSON)
-                .body_from_file("./tests/mocks/player_achievements.json");
+                .body_from_file("./tests/mocks/player/player_achievements.json");
         });
 
         let wom_client = WomClient::new_with_base_url(server.base_url().to_string(), None);
@@ -372,5 +393,28 @@ mod tests {
         assert!(result.is_ok());
         let achievements = result.unwrap();
         assert_eq!(achievements.len(), 2);
+    }
+
+    #[tokio::test]
+    async fn player_achievements_progress_test() {
+        let server = MockServer::start();
+        let mock = server.mock(|when, then| {
+            when.method(GET)
+                .path(format!("{}/IFat%20Fingers/achievements/progress", BASE_URL));
+            then.status(200)
+                .header(CONTENT_TYPE, APPLICATION_JSON)
+                .body_from_file("./tests/mocks/player/player_achievement_progress.json");
+        });
+
+        let wom_client = WomClient::new_with_base_url(server.base_url().to_string(), None);
+        let result = wom_client
+            .player_client
+            .get_player_achievement_progress("IFat Fingers".to_string())
+            .await;
+
+        mock.assert();
+        assert!(result.is_ok());
+        let achievements_progress = result.unwrap();
+        assert_eq!(achievements_progress.len(), 4);
     }
 }
