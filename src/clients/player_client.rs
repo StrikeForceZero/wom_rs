@@ -1,5 +1,6 @@
 use crate::helpers::{handle_response, pagination_to_query};
-use crate::models::global_types::{PlayerId, Username};
+use crate::models::competition::{CompetitionStatus, PLayerParticipation};
+use crate::models::global_types::{CompetitionId, PlayerId, Username};
 use crate::models::player::{
     Achievement, AchievementProgress, AssertPlayerType, Player, PlayerDetails, SnapShot,
 };
@@ -14,7 +15,7 @@ enum PlayerEndPoints {
     DetailsById(PlayerId),
     Achievements(Username),
     AchievementsProgress(Username),
-    Competitions,
+    Competitions(Username),
     CompetitionsStandings,
     GroupMembership,
     Gains,
@@ -59,6 +60,9 @@ impl PlayerEndPoints {
                     ApiEndpoint::Player.as_str(),
                     username
                 )
+            }
+            PlayerEndPoints::Competitions(username) => {
+                format!("{}/{}/competitions", ApiEndpoint::Player.as_str(), username)
             }
             _ => format!("{}", ApiEndpoint::Player.as_str()),
         }
@@ -188,17 +192,38 @@ impl PlayerClient {
         handle_response::<Vec<AchievementProgress>>(result).await
     }
 
-    pub async fn get_player_snap_shots(
+    /// Get a player's competitions by username
+    ///  [Get Player Competition Participations](https://docs.wiseoldman.net/players-api/player-endpoints#get-player-competition-participations)
+    pub async fn get_player_competitions(
         &self,
         username: Username,
-    ) -> Result<Vec<SnapShot>, anyhow::Error> {
-        let result = self
-            .client
-            .get(self.get_url(PlayerEndPoints::Snapshots(username)).as_str())
-            .send()
-            .await;
-        handle_response::<Vec<SnapShot>>(result).await
+        competition_status: Option<CompetitionStatus>,
+        pagination: Option<Pagination>,
+    ) -> Result<Vec<PLayerParticipation>, anyhow::Error> {
+        let mut full_url = self.get_url(PlayerEndPoints::Competitions(username));
+        if let Some(status) = competition_status {
+            full_url = format!("{}?status={}", full_url, status.as_str());
+        }
+        if let Some(pagination) = pagination {
+            full_url = format!("{}{}", full_url, pagination_to_query(Some(pagination)));
+        }
+
+        let result = self.client.get(full_url).send().await;
+        handle_response::<Vec<PLayerParticipation>>(result).await
     }
+
+    // /// Get a player's snapshots by username
+    // pub async fn get_player_snap_shots(
+    //     &self,
+    //     username: Username,
+    // ) -> Result<Vec<SnapShot>, anyhow::Error> {
+    //     let result = self
+    //         .client
+    //         .get(self.get_url(PlayerEndPoints::Snapshots(username)).as_str())
+    //         .send()
+    //         .await;
+    //     handle_response::<Vec<SnapShot>>(result).await
+    // }
 }
 
 #[cfg(test)]
@@ -309,30 +334,6 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn player_snapshots_test() {
-        let server = MockServer::start();
-        let mock = server.mock(|when, then| {
-            when.method(GET)
-                .path(format!("{}/IFat%20Fingers/snapshots", BASE_URL));
-            then.status(200)
-                .header(CONTENT_TYPE, APPLICATION_JSON)
-                .body_from_file("./tests/mocks/player/player_snapshots.json");
-        });
-
-        let wom_client = WomClient::new_with_base_url(server.base_url().to_string(), None);
-        let result = wom_client
-            .player_client
-            .get_player_snap_shots("IFat Fingers".to_string())
-            .await;
-
-        mock.assert();
-        println!("{:?}", result);
-        assert!(result.is_ok());
-        let snapshots = result.unwrap();
-        assert_eq!(snapshots.len(), 1);
-    }
-
-    #[tokio::test]
     async fn player_details_test() {
         let server = MockServer::start();
         let mock = server.mock(|when, then| {
@@ -417,4 +418,52 @@ mod tests {
         let achievements_progress = result.unwrap();
         assert_eq!(achievements_progress.len(), 4);
     }
+
+    #[tokio::test]
+    async fn _player_competitions_test() {
+        let server = MockServer::start();
+        let mock = server.mock(|when, then| {
+            when.method(GET)
+                .path(format!("{}/IFat%20Fingers/competitions", BASE_URL));
+            then.status(200)
+                .header(CONTENT_TYPE, APPLICATION_JSON)
+                .body_from_file("./tests/mocks/player/player_competition_participation.json");
+        });
+
+        let wom_client = WomClient::new_with_base_url(server.base_url().to_string(), None);
+        let result = wom_client
+            .player_client
+            .get_player_competitions("IFat Fingers".to_string(), None, None)
+            .await;
+
+        println!("{:?}", result);
+        mock.assert();
+        assert!(result.is_ok());
+        let competitions = result.unwrap();
+        assert_eq!(competitions.len(), 2);
+    }
+
+    // #[tokio::test]
+    // async fn player_snapshots_test() {
+    //     let server = MockServer::start();
+    //     let mock = server.mock(|when, then| {
+    //         when.method(GET)
+    //             .path(format!("{}/IFat%20Fingers/snapshots", BASE_URL));
+    //         then.status(200)
+    //             .header(CONTENT_TYPE, APPLICATION_JSON)
+    //             .body_from_file("./tests/mocks/player/player_snapshots.json");
+    //     });
+    //
+    //     let wom_client = WomClient::new_with_base_url(server.base_url().to_string(), None);
+    //     let result = wom_client
+    //         .player_client
+    //         .get_player_snap_shots("IFat Fingers".to_string())
+    //         .await;
+    //
+    //     mock.assert();
+    //     println!("{:?}", result);
+    //     assert!(result.is_ok());
+    //     let snapshots = result.unwrap();
+    //     assert_eq!(snapshots.len(), 1);
+    // }
 }

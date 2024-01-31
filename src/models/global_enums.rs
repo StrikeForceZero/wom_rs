@@ -1,4 +1,8 @@
-use serde::{Deserialize, Serialize};
+use crate::models::snapshot::ComputedMetric;
+use convert_case::{Case, Casing};
+use serde::{Deserialize, Deserializer, Serialize};
+use std::str::FromStr;
+use strum::{Display, EnumIter, EnumString, IntoEnumIterator};
 
 /// [Period](https://docs.wiseoldman.net/global-type-definitions#enum-period)
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -13,17 +17,45 @@ pub enum Period {
 }
 
 /// [Metric](https://docs.wiseoldman.net/global-type-definitions#enum-metric)
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub enum Metric {
-    Skill,
-    Boss,
-    Activity,
-    ComputedMetric,
+    Skill(Skill),
+    Boss(Boss),
+    Activity(Activity),
+    ComputedMetric(ComputedMetricEnum),
+}
+
+impl<'de> Deserialize<'de> for Metric {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let metric_str: String = Deserialize::deserialize(deserializer)?;
+        let camel_cased = metric_str.to_case(Case::Title).replace(" ", "");
+
+        if let Ok(skill) = Skill::try_from(camel_cased.as_str()) {
+            return Ok(Metric::Skill(skill));
+        }
+
+        if let Ok(boss) = Boss::try_from(camel_cased.as_str()) {
+            return Ok(Metric::Boss(boss));
+        }
+
+        if let Ok(activity) = Activity::try_from(camel_cased.as_str()) {
+            return Ok(Metric::Activity(activity));
+        }
+
+        if let Ok(computed_metric) = ComputedMetricEnum::try_from(camel_cased.as_str()) {
+            return Ok(Metric::ComputedMetric(computed_metric));
+        }
+
+        Err(serde::de::Error::custom("Unknown metric type"))
+    }
 }
 
 /// [Skill](https://docs.wiseoldman.net/global-type-definitions#enum-skill)
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, EnumString)]
 #[serde(rename_all = "camelCase")]
 pub enum Skill {
     Overall,
@@ -53,7 +85,7 @@ pub enum Skill {
 }
 
 /// [Boss](https://docs.wiseoldman.net/global-type-definitions#enum-boss)
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, EnumString)]
 #[serde(rename_all = "snake_case")]
 pub enum Boss {
     AbyssalSire,
@@ -118,14 +150,14 @@ pub enum Boss {
 }
 
 /// [Computed Metric](https://docs.wiseoldman.net/global-type-definitions#enum-computed-metric)
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, EnumString)]
 #[serde(rename_all = "camelCase")]
 pub enum ComputedMetricEnum {
     Ehp,
     Ehb,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, EnumString)]
 #[serde(rename_all = "snake_case")]
 pub enum Activity {
     LeaguePoints,

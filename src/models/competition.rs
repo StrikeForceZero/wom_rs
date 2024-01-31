@@ -1,5 +1,6 @@
 use crate::models::global_enums::Metric;
-use crate::models::global_types::GroupId;
+use crate::models::global_types::{CompetitionId, GroupId, PlayerId};
+use crate::models::group::Group;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
@@ -18,6 +19,16 @@ pub enum CompetitionStatus {
     Upcoming,
     Ongoing,
     Finished,
+}
+
+impl CompetitionStatus {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            CompetitionStatus::Upcoming => "upcoming",
+            CompetitionStatus::Ongoing => "ongoing",
+            CompetitionStatus::Finished => "finished",
+        }
+    }
 }
 
 /// [Competition Type](https://docs.wiseoldman.net/competitions-api/competition-type-definitions#enum-competition-csv-table-type)
@@ -63,5 +74,28 @@ pub struct Competition {
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
     pub participant_count: i64,
-    // pub group: Option<Group>,
+    pub group: Option<Group>,
+}
+
+///[Participation](https://docs.wiseoldman.net/competitions-api/competition-type-definitions#object-participation)
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Participation {
+    pub player_id: PlayerId,
+    pub competition_id: CompetitionId,
+    pub team_name: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+/// [Player Participation](https://docs.wiseoldman.net/competitions-api/competition-type-definitions#object-player-participation)
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PLayerParticipation {
+    pub player_id: PlayerId,
+    pub competition_id: CompetitionId,
+    pub team_name: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+    pub competition: Competition,
 }
