@@ -1,19 +1,20 @@
-use crate::helpers::{handle_response, pagination_to_query};
+use crate::helpers::{handle_response, query_params_to_string};
 use crate::models::competition::{
     CompetitionStatus, PlayerCompetitionStanding, PlayerParticipation,
 };
-use crate::models::global_enums::Period;
+use crate::models::global_enums::{Metric, Period};
 use crate::models::global_types::{CompetitionId, PlayerId, Username};
 use crate::models::group::PlayerMembership;
 use crate::models::player::{
     Achievement, AchievementProgress, AssertPlayerType, Player, PlayerDetails, PlayerGain, SnapShot,
 };
-use crate::{ApiEndpoint, Pagination};
+use crate::{ApiEndpoint, Pagination, QueryParam};
 use anyhow::Result;
 use chrono::{DateTime, Utc};
+use std::fmt::Formatter;
 
 enum PlayerEndPoints {
-    Search(Username),
+    Search,
     Update(Username),
     AssertType(Username),
     Details(Username),
@@ -24,7 +25,7 @@ enum PlayerEndPoints {
     CompetitionsStandings(Username),
     GroupMembership(Username),
     Gains(Username),
-    Records,
+    Records(Username),
     Snapshots(Username),
     SnapshotsTimeline,
     NameChange,
@@ -34,12 +35,8 @@ enum PlayerEndPoints {
 impl PlayerEndPoints {
     fn url(&self) -> String {
         match self {
-            PlayerEndPoints::Search(username) => {
-                format!(
-                    "{}/search?username={}",
-                    ApiEndpoint::Player.as_str(),
-                    username
-                )
+            PlayerEndPoints::Search => {
+                format!("{}/search", ApiEndpoint::Player.as_str())
             }
             PlayerEndPoints::Update(username) => {
                 format!("{}/{}", ApiEndpoint::Player.as_str(), username)
@@ -82,6 +79,9 @@ impl PlayerEndPoints {
             PlayerEndPoints::Gains(username) => {
                 format!("{}/{}/gained", ApiEndpoint::Player.as_str(), username)
             }
+            PlayerEndPoints::Records(username) => {
+                format!("{}/{}/records", ApiEndpoint::Player.as_str(), username)
+            }
             _ => format!("{}", ApiEndpoint::Player.as_str()),
         }
     }
@@ -112,12 +112,17 @@ impl PlayerClient {
         username: Username,
         pagination: Option<Pagination>,
     ) -> Result<Vec<Player>, anyhow::Error> {
-        let pagination_query = pagination_to_query(pagination);
+        let mut queries = Vec::new();
+        if let Some(pagination) = pagination {
+            queries.extend(pagination.to_query())
+        }
+        let username_query: QueryParam = ("username".to_string(), username.to_string());
+        queries.push(username_query);
 
         let full_url = format!(
             "{}{}",
-            self.get_url(PlayerEndPoints::Search(username)),
-            pagination_query
+            self.get_url(PlayerEndPoints::Search),
+            query_params_to_string(&queries)
         );
         let result = self.client.get(full_url.as_str()).send().await;
         handle_response::<Vec<Player>>(result).await
@@ -212,13 +217,19 @@ impl PlayerClient {
         competition_status: Option<CompetitionStatus>,
         pagination: Option<Pagination>,
     ) -> Result<Vec<PlayerParticipation>, anyhow::Error> {
-        let mut full_url = self.get_url(PlayerEndPoints::Competitions(username));
-        if let Some(status) = competition_status {
-            full_url = format!("{}?status={}", full_url, status.as_str());
-        }
+        let mut queries = Vec::new();
         if let Some(pagination) = pagination {
-            full_url = format!("{}{}", full_url, pagination_to_query(Some(pagination)));
+            queries.extend(pagination.to_query())
         }
+        if let Some(status) = competition_status {
+            queries.push(("status".to_string(), status.as_str().to_string()));
+        }
+
+        let full_url = format!(
+            "{}{}",
+            self.get_url(PlayerEndPoints::Competitions(username)),
+            query_params_to_string(&queries)
+        );
 
         let result = self.client.get(full_url).send().await;
         handle_response::<Vec<PlayerParticipation>>(result).await
@@ -232,9 +243,12 @@ impl PlayerClient {
         competition_status: CompetitionStatus,
     ) -> Result<Vec<PlayerCompetitionStanding>, anyhow::Error> {
         let full_url = format!(
-            "{}?status={}",
+            "{}{}",
             self.get_url(PlayerEndPoints::CompetitionsStandings(username)),
-            competition_status.as_str()
+            query_params_to_string(&vec![(
+                "status".to_string(),
+                competition_status.as_str().to_string()
+            )])
         );
         let result = self.client.get(full_url).send().await;
         handle_response::<Vec<PlayerCompetitionStanding>>(result).await
@@ -247,10 +261,15 @@ impl PlayerClient {
         username: Username,
         pagination: Option<Pagination>,
     ) -> Result<Vec<PlayerMembership>, anyhow::Error> {
+        let mut queries = Vec::new();
+        if let Some(pagination) = pagination {
+            queries.extend(pagination.to_query())
+        }
+
         let full_url = format!(
             "{}{}",
             self.get_url(PlayerEndPoints::GroupMembership(username)),
-            pagination_to_query(pagination)
+            query_params_to_string(&queries)
         );
 
         let result = self.client.get(full_url).send().await;
@@ -291,6 +310,31 @@ impl PlayerClient {
         handle_response::<PlayerGain>(result).await
     }
 
+    /// Get a player's records by username
+    /// [Get Player Records](https://docs.wiseoldman.net/players-api/player-endpoints#get-player-records)
+    pub async fn get_records(
+        &self,
+        username: Username,
+        period: Option<Period>,
+        metric: Option<Metric>,
+    ) -> Result<Vec<crate::models::record::Record>, anyhow::Error> {
+        let mut queries = Vec::new();
+        if let Some(period) = period.clone() {
+            queries.push(("period".to_string(), period.as_str().to_string()));
+        }
+        if let Some(metric) = metric.clone() {
+            queries.push(("metric".to_string(), metric.to_string()));
+        }
+
+        let full_url = format!(
+            "{}{}",
+            self.get_url(PlayerEndPoints::Records(username)),
+            query_params_to_string(&queries)
+        );
+        let result = self.client.get(full_url).send().await;
+        handle_response::<Vec<crate::models::record::Record>>(result).await
+    }
+
     // /// Get a player's snapshots by username
     // pub async fn get_player_snap_shots(
     //     &self,
@@ -308,7 +352,8 @@ impl PlayerClient {
 #[cfg(test)]
 mod tests {
     use crate::models::competition::CompetitionStatus;
-    use crate::models::global_enums::Period;
+    use crate::models::global_enums::Skill::Overall;
+    use crate::models::global_enums::{Metric, Period};
     use crate::{Pagination, WomClient};
     use httpmock::prelude::*;
 
@@ -548,6 +593,65 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn player_competitions_with_only_status_params_test() {
+        let server = MockServer::start();
+        let mock = server.mock(|when, then| {
+            when.method(GET)
+                .path(format!("{}/IFat%20Fingers/competitions", BASE_URL))
+                .query_param("status", "finished");
+            then.status(200)
+                .header(CONTENT_TYPE, APPLICATION_JSON)
+                .body_from_file("./tests/mocks/player/player_competition_participation.json");
+        });
+
+        let wom_client = WomClient::new_with_base_url(server.base_url().to_string(), None);
+        let result = wom_client
+            .player_client
+            .get_competitions(
+                "IFat Fingers".to_string(),
+                Some(CompetitionStatus::Finished),
+                None,
+            )
+            .await;
+        mock.assert();
+        assert!(result.is_ok());
+        let competitions = result.unwrap();
+        assert_eq!(competitions.len(), 2);
+    }
+
+    #[tokio::test]
+    async fn player_competitions_with_only_pagination_params_test() {
+        let server = MockServer::start();
+        let mock = server.mock(|when, then| {
+            when.method(GET)
+                .path(format!("{}/IFat%20Fingers/competitions", BASE_URL))
+                .query_param("limit", "10")
+                .query_param("offset", "10");
+
+            then.status(200)
+                .header(CONTENT_TYPE, APPLICATION_JSON)
+                .body_from_file("./tests/mocks/player/player_competition_participation.json");
+        });
+
+        let wom_client = WomClient::new_with_base_url(server.base_url().to_string(), None);
+        let result = wom_client
+            .player_client
+            .get_competitions(
+                "IFat Fingers".to_string(),
+                None,
+                Some(Pagination {
+                    limit: Some(10),
+                    offset: Some(10),
+                }),
+            )
+            .await;
+        mock.assert();
+        assert!(result.is_ok());
+        let competitions = result.unwrap();
+        assert_eq!(competitions.len(), 2);
+    }
+
+    #[tokio::test]
     async fn player_competitions_standings_with_params_test() {
         let server = MockServer::start();
         let mock = server.mock(|when, then| {
@@ -617,6 +721,58 @@ mod tests {
             .await;
         mock.assert();
         assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn get_player_records_test() {
+        let server = MockServer::start();
+        let mock = server.mock(|when, then| {
+            when.method(GET)
+                .path(format!("{}/IFat%20Fingers/records", BASE_URL));
+            then.status(200)
+                .header(CONTENT_TYPE, APPLICATION_JSON)
+                .body_from_file("./tests/mocks/player/player_records.json");
+        });
+
+        let wom_client = WomClient::new_with_base_url(server.base_url().to_string(), None);
+
+        let result = wom_client
+            .player_client
+            .get_records("IFat Fingers".to_string(), None, None)
+            .await;
+        mock.assert();
+        assert!(result.is_ok());
+        let records = result.unwrap();
+        assert_eq!(records.len(), 4);
+    }
+
+    #[tokio::test]
+    async fn get_player_records_with_params_test() {
+        let server = MockServer::start();
+        let mock = server.mock(|when, then| {
+            when.method(GET)
+                .path(format!("{}/IFat%20Fingers/records", BASE_URL))
+                .query_param("period", "week")
+                .query_param("metric", "overall");
+            then.status(200)
+                .header(CONTENT_TYPE, APPLICATION_JSON)
+                .body_from_file("./tests/mocks/player/player_records.json");
+        });
+
+        let wom_client = WomClient::new_with_base_url(server.base_url().to_string(), None);
+
+        let result = wom_client
+            .player_client
+            .get_records(
+                "IFat Fingers".to_string(),
+                Some(Period::Week),
+                Some(Metric::Skill(Overall)),
+            )
+            .await;
+        mock.assert();
+        assert!(result.is_ok());
+        let records = result.unwrap();
+        assert_eq!(records.len(), 4);
     }
 
     // #[tokio::test]

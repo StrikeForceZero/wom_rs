@@ -39,6 +39,17 @@ pub struct Pagination {
     pub offset: Option<i32>,
 }
 
+pub type QueryParams = Vec<QueryParam>;
+pub type QueryParam = (String, String);
+
+impl Pagination {
+    pub fn to_query(&self) -> QueryParams {
+        let limit = ("limit".to_string(), self.limit.unwrap_or(20).to_string());
+        let offset = ("offset".to_string(), self.offset.unwrap_or(0).to_string());
+        vec![limit, offset]
+    }
+}
+
 impl WomClient {
     fn new_reqwest_client(api_key: Option<String>) -> reqwest::Client {
         let client = reqwest::Client::builder().user_agent(APP_USER_AGENT);
@@ -83,21 +94,9 @@ impl WomClient {
 
 pub(crate) mod helpers {
     use crate::models::error::ErrorResponse;
-    use crate::Pagination;
     use anyhow::anyhow;
     use reqwest::{Error, Response, StatusCode};
     use serde::de::DeserializeOwned;
-
-    pub fn pagination_to_query(pagination: Option<Pagination>) -> String {
-        match pagination {
-            Some(p) => format!(
-                "&limit={}&offset={}",
-                p.limit.unwrap_or(20),
-                p.offset.unwrap_or(0)
-            ),
-            None => "".to_string(),
-        }
-    }
 
     pub async fn handle_response<ResponseType: DeserializeOwned>(
         response: Result<Response, Error>,
@@ -135,6 +134,18 @@ pub(crate) mod helpers {
             Ok(_) => Ok(()),
             Err(err) => Err(err),
         }
+    }
+
+    pub fn query_params_to_string(query_params: &Vec<(String, String)>) -> String {
+        let mut query_string = String::new();
+        for (index, (key, value)) in query_params.iter().enumerate() {
+            if index == 0 {
+                query_string.push_str(&format!("?{}={}", key, value));
+            } else {
+                query_string.push_str(&format!("&{}={}", key, value));
+            }
+        }
+        query_string
     }
 }
 

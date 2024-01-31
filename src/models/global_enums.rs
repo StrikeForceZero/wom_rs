@@ -1,7 +1,7 @@
 use convert_case::{Case, Casing};
 use serde::{Deserialize, Deserializer, Serialize};
 use std::str::FromStr;
-use strum::{Display, EnumString};
+use strum::{AsRefStr, Display, EnumString};
 
 /// [Period](https://docs.wiseoldman.net/global-type-definitions#enum-period)
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -28,13 +28,25 @@ impl Period {
 }
 
 /// [Metric](https://docs.wiseoldman.net/global-type-definitions#enum-metric)
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, EnumString)]
 #[serde(rename_all = "camelCase")]
 pub enum Metric {
     Skill(Skill),
     Boss(Boss),
     Activity(Activity),
     ComputedMetric(ComputedMetricEnum),
+}
+
+impl Metric {
+    pub fn to_string(&self) -> String {
+        let metric_string = match self {
+            Metric::Skill(skill) => skill.to_string(),
+            Metric::Boss(boss) => boss.to_string(),
+            Metric::Activity(activity) => activity.to_string(),
+            Metric::ComputedMetric(computed_metric) => computed_metric.to_string(),
+        };
+        return metric_string.to_case(Case::Snake);
+    }
 }
 
 impl<'de> Deserialize<'de> for Metric {
@@ -69,9 +81,13 @@ impl<'de> Deserialize<'de> for Metric {
 }
 
 /// [Skill](https://docs.wiseoldman.net/global-type-definitions#enum-skill)
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, EnumString)]
+#[derive(
+    Debug, Default, Clone, PartialEq, Serialize, Deserialize, EnumString, AsRefStr, Display,
+)]
 #[serde(rename_all = "camelCase")]
 pub enum Skill {
+    #[default]
+    None,
     Overall,
     Attack,
     Defence,
@@ -99,9 +115,11 @@ pub enum Skill {
 }
 
 /// [Boss](https://docs.wiseoldman.net/global-type-definitions#enum-boss)
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, EnumString)]
+#[derive(Debug, Default, Clone, PartialEq, Serialize, Deserialize, EnumString, Display)]
 #[serde(rename_all = "snake_case")]
 pub enum Boss {
+    #[default]
+    None,
     AbyssalSire,
     AlchemicalHydra,
     Artio,
@@ -164,16 +182,20 @@ pub enum Boss {
 }
 
 /// [Computed Metric](https://docs.wiseoldman.net/global-type-definitions#enum-computed-metric)
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, EnumString)]
+#[derive(Debug, Default, Clone, PartialEq, Serialize, Deserialize, EnumString, Display)]
 #[serde(rename_all = "camelCase")]
 pub enum ComputedMetricEnum {
+    #[default]
+    None,
     Ehp,
     Ehb,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, EnumString)]
+#[derive(Debug, Default, Clone, PartialEq, Serialize, Deserialize, EnumString, Display)]
 #[serde(rename_all = "snake_case")]
 pub enum Activity {
+    #[default]
+    None,
     LeaguePoints,
     BountyHunterHunter,
     BountyHunterRogue,

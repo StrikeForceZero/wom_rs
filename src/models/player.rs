@@ -426,6 +426,7 @@ pub struct AssertPlayerType {
     pub changed: bool,
 }
 
+/// Represents a player's gains
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PlayerGain {
@@ -434,6 +435,7 @@ pub struct PlayerGain {
     pub data: PlayerGainData,
 }
 
+/// The data of the player's gains
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PlayerGainData {
@@ -442,6 +444,7 @@ pub struct PlayerGainData {
     pub activities: ActivityGains,
 }
 
+/// The gains of a player's skills
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SkillGains {
@@ -471,6 +474,7 @@ pub struct SkillGains {
     pub construction: SkillGain,
 }
 
+/// The gains of a player's skill
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SkillGain {
@@ -481,6 +485,7 @@ pub struct SkillGain {
     pub level: GainProgress,
 }
 
+/// The gains of a player's bosses
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub struct BossGains {
@@ -545,6 +550,7 @@ pub struct BossGains {
     pub zulrah: BossGain,
 }
 
+/// The gains of a player's boss
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BossGain {
@@ -554,6 +560,7 @@ pub struct BossGain {
     pub kills: GainProgress,
 }
 
+/// The gains of a player's activities
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ActivityGains {
@@ -573,6 +580,7 @@ pub struct ActivityGains {
     pub guardians_of_the_rift: Option<ActivityGain>,
 }
 
+/// The gains of a player's activity
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ActivityGain {
@@ -581,6 +589,7 @@ pub struct ActivityGain {
     pub rank: GainProgress,
 }
 
+/// Each metrics gain progress.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GainProgress {
