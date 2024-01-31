@@ -1,8 +1,7 @@
-use crate::models::snapshot::ComputedMetric;
 use convert_case::{Case, Casing};
 use serde::{Deserialize, Deserializer, Serialize};
 use std::str::FromStr;
-use strum::{Display, EnumIter, EnumString, IntoEnumIterator};
+use strum::{Display, EnumString};
 
 /// [Period](https://docs.wiseoldman.net/global-type-definitions#enum-period)
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -14,6 +13,18 @@ pub enum Period {
     Week,
     Month,
     Year,
+}
+
+impl Period {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Period::FiveMin => "five_min",
+            Period::Day => "day",
+            Period::Week => "week",
+            Period::Month => "month",
+            Period::Year => "year",
+        }
+    }
 }
 
 /// [Metric](https://docs.wiseoldman.net/global-type-definitions#enum-metric)
@@ -50,7 +61,10 @@ impl<'de> Deserialize<'de> for Metric {
             return Ok(Metric::ComputedMetric(computed_metric));
         }
 
-        Err(serde::de::Error::custom("Unknown metric type"))
+        Err(serde::de::Error::custom(format!(
+            "Unknown metric type: {:?}",
+            metric_str
+        )))
     }
 }
 

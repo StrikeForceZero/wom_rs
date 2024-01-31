@@ -1,6 +1,7 @@
-use crate::models::global_enums::Metric;
+use crate::models::global_enums::{Boss, Metric, Skill};
 use crate::models::global_types::{CompetitionId, GroupId, PlayerId};
 use crate::models::group::Group;
+use crate::models::snapshot::SkillMetric;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
@@ -91,11 +92,26 @@ pub struct Participation {
 /// [Player Participation](https://docs.wiseoldman.net/competitions-api/competition-type-definitions#object-player-participation)
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct PLayerParticipation {
+pub struct PlayerParticipation {
     pub player_id: PlayerId,
     pub competition_id: CompetitionId,
     pub team_name: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
     pub competition: Competition,
+}
+
+/// [Player Competition Standing](https://docs.wiseoldman.net/competitions-api/competition-type-definitions#object-player-competition-standing)
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PlayerCompetitionStanding {
+    pub player_id: PlayerId,
+    pub competition_id: CompetitionId,
+    pub team_name: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+    pub competition: Competition,
+    pub progress: CompetitionProgress,
+    pub levels: Option<CompetitionLevelsProgress>,
+    pub rank: i64,
 }

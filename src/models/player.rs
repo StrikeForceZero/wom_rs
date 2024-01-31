@@ -1,3 +1,4 @@
+use crate::models::global_enums::{Activity, Boss, Skill};
 use crate::models::global_types::PlayerId;
 use crate::models::snapshot::{Activities, Bosses, Computed, Skills};
 use chrono::{DateTime, Utc};
@@ -423,4 +424,167 @@ pub struct PlayerArchive {
 pub struct AssertPlayerType {
     pub player: Player,
     pub changed: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PlayerGain {
+    pub starts_at: Option<DateTime<Utc>>,
+    pub ends_at: Option<DateTime<Utc>>,
+    pub data: PlayerGainData,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PlayerGainData {
+    pub skills: SkillGains,
+    pub bosses: BossGains,
+    pub activities: ActivityGains,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SkillGains {
+    pub overall: SkillGain,
+    pub attack: SkillGain,
+    pub defence: SkillGain,
+    pub strength: SkillGain,
+    pub hitpoints: SkillGain,
+    pub ranged: SkillGain,
+    pub prayer: SkillGain,
+    pub magic: SkillGain,
+    pub cooking: SkillGain,
+    pub woodcutting: SkillGain,
+    pub fletching: SkillGain,
+    pub fishing: SkillGain,
+    pub firemaking: SkillGain,
+    pub crafting: SkillGain,
+    pub smithing: SkillGain,
+    pub mining: SkillGain,
+    pub herblore: SkillGain,
+    pub agility: SkillGain,
+    pub thieving: SkillGain,
+    pub slayer: SkillGain,
+    pub farming: SkillGain,
+    pub runecrafting: SkillGain,
+    pub hunter: SkillGain,
+    pub construction: SkillGain,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SkillGain {
+    pub metric: Skill,
+    pub experience: GainProgress,
+    pub ehp: GainProgress,
+    pub rank: GainProgress,
+    pub level: GainProgress,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub struct BossGains {
+    pub abyssal_sire: BossGain,
+    pub alchemical_hydra: BossGain,
+    pub artio: BossGain,
+    pub barrows_chests: BossGain,
+    pub bryophyta: BossGain,
+    pub callisto: BossGain,
+    pub calvarion: BossGain,
+    pub cerberus: BossGain,
+    pub chambers_of_xeric: BossGain,
+    pub chambers_of_xeric_challenge_mode: BossGain,
+    pub chaos_elemental: BossGain,
+    pub chaos_fanatic: BossGain,
+    pub commander_zilyana: BossGain,
+    pub corporeal_beast: BossGain,
+    pub crazy_archaeologist: BossGain,
+    pub dagannoth_prime: BossGain,
+    pub dagannoth_rex: BossGain,
+    pub dagannoth_supreme: BossGain,
+    pub deranged_archaeologist: BossGain,
+    pub duke_sucellus: BossGain,
+    pub general_graardor: BossGain,
+    pub giant_mole: BossGain,
+    pub grotesque_guardians: BossGain,
+    pub hespori: BossGain,
+    pub kalphite_queen: BossGain,
+    pub king_black_dragon: BossGain,
+    pub kraken: BossGain,
+    pub kreearra: BossGain,
+    pub kril_tsutsaroth: BossGain,
+    pub mimic: BossGain,
+    pub nex: BossGain,
+    pub nightmare: BossGain,
+    pub phosanis_nightmare: BossGain,
+    pub obor: BossGain,
+    pub phantom_muspah: BossGain,
+    pub sarachnis: BossGain,
+    pub scorpia: BossGain,
+    pub scurrius: BossGain,
+    pub skotizo: BossGain,
+    pub spindel: BossGain,
+    pub tempoross: BossGain,
+    pub the_gauntlet: BossGain,
+    pub the_corrupted_gauntlet: BossGain,
+    pub the_leviathan: BossGain,
+    pub the_whisperer: BossGain,
+    pub theatre_of_blood: BossGain,
+    pub theatre_of_blood_hard_mode: BossGain,
+    pub thermonuclear_smoke_devil: BossGain,
+    pub tombs_of_amascut: BossGain,
+    pub tombs_of_amascut_expert: BossGain,
+    pub tzkal_zuk: BossGain,
+    pub tztok_jad: BossGain,
+    pub vardorvis: BossGain,
+    pub venenatis: BossGain,
+    pub vetion: BossGain,
+    pub vorkath: BossGain,
+    pub wintertodt: BossGain,
+    pub zalcano: BossGain,
+    pub zulrah: BossGain,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BossGain {
+    pub metric: Boss,
+    pub ehb: GainProgress,
+    pub rank: GainProgress,
+    pub kills: GainProgress,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ActivityGains {
+    pub league_points: Option<ActivityGain>,
+    pub bounty_hunter_hunter: Option<ActivityGain>,
+    pub bounty_hunter_rogue: Option<ActivityGain>,
+    pub clue_scrolls_all: Option<ActivityGain>,
+    pub clue_scrolls_beginner: Option<ActivityGain>,
+    pub clue_scrolls_easy: Option<ActivityGain>,
+    pub clue_scrolls_medium: Option<ActivityGain>,
+    pub clue_scrolls_hard: Option<ActivityGain>,
+    pub clue_scrolls_elite: Option<ActivityGain>,
+    pub clue_scrolls_master: Option<ActivityGain>,
+    pub last_man_standing: Option<ActivityGain>,
+    pub pvp_arena: Option<ActivityGain>,
+    pub soul_wars_zeal: Option<ActivityGain>,
+    pub guardians_of_the_rift: Option<ActivityGain>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ActivityGain {
+    pub metric: Activity,
+    pub score: GainProgress,
+    pub rank: GainProgress,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GainProgress {
+    pub gained: f64,
+    pub start: f64,
+    pub end: f64,
 }

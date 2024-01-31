@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 /// [Group Role](https://docs.wiseoldman.net/groups-api/group-type-definitions#enum-group-role)
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "snake_case")]
 pub enum GroupRole {
     Achiever,
     Adamant,
@@ -365,6 +365,8 @@ pub struct GroupMemberShip {
 }
 
 /// [Player Membership](https://docs.wiseoldman.net/groups-api/group-type-definitions#object-player-membership)
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PlayerMembership {
     pub player_id: PlayerId,
     pub group_id: GroupId,
