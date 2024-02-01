@@ -17,7 +17,8 @@ static APP_USER_AGENT: &str = concat!(
     "GitHub:https://github.com/fatfingers23/wom_rs"
 );
 
-pub enum ApiEndpoint {
+///Wom endpoints
+pub(crate) enum ApiEndpoint {
     Player,
 }
 
@@ -34,13 +35,15 @@ pub struct WomClient {
     pub player_client: PlayerClient,
 }
 
-pub struct Pagination {
+pub(crate) struct Pagination {
     pub limit: Option<i32>,
     pub offset: Option<i32>,
 }
 
-pub type QueryParams = Vec<QueryParam>;
-pub type QueryParam = (String, String);
+/// Query parameters for a api call
+pub(crate) type QueryParams = Vec<QueryParam>;
+/// Query parameter tuple
+pub(crate) type QueryParam = (String, String);
 
 impl Pagination {
     pub fn to_query(&self) -> QueryParams {

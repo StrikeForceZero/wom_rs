@@ -14,5 +14,5 @@ pub mod name;
 pub mod player;
 /// Possible Responses found in [Record Types & Entities](https://docs.wiseoldman.net/records-api/record-type-definitions)
 pub mod record;
-/// Mapping used for snapshots since they are a bit more complex. Very similar to the [PlayerGain], but kept separate for clarity.
+/// Mapping used for snapshots since they are a bit more complex. Very similar to the PlayerGained in models::player, but kept separate for clarity.
 pub mod snapshot;

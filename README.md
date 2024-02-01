@@ -29,6 +29,17 @@ let api_key = std::env::var("WOM_API_KEY").unwrap();
 let wom_client = WomClient::new_with_key(api_key);
 ```
 
+## Example Web Call
+```rust
+use wom_rs::WomClient;
+let wom_client = WomClient::new();
+
+let details = wom_client.player_client.get_details("IFat Fingers".to_string()).await;
+println!("{:?}\n", details);
+```
+
+
+
 ## Endpoints Progress
 Some may have cross over completion. For example you can get player name changes by username, but cannot submit request for a name change.
 * [x] [Players API](https://docs.wiseoldman.net/players-api/player-endpoints)
@@ -57,3 +68,6 @@ Some of the models that may not be clear are:
 
 ### [Mock Responses](./test/mocks)
 Contains the mock responses for the tests. These are used to test the deserialization of the responses from the API. All examples are either from the real API or the examples provided in WOM fantastic API documentation.
+
+## Special Thanks
+None of this would be possible with out the wonderful team at [Wise Old Man](https://github.com/wise-old-man). Would not need a wrapper if it was not for their fantastic website. Not to mention their amazing [documentation](https://docs.wiseoldman.net) made creating this a breeze. 
