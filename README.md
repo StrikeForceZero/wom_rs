@@ -35,7 +35,7 @@ use wom_rs::WomClient;
 let wom_client = WomClient::new();
 
 let details = wom_client.player_client.get_details("IFat Fingers".to_string()).await;
-println!("{:?}\n", details);
+println!("{:?}", details);
 ```
 
 
