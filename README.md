@@ -4,7 +4,7 @@
 
 A asynchronous rust wrapper for interacting with [Wise Old Man API](https://docs.wiseoldman.net/).
 
-The goal of wom_rs is to provide a 1:1 in rust to their API. This is still a work in progress and can find below in [Endpoints Progress](#endpoints-progress) the current status of the endpoints. 
+The goal of wom_rs is to provide a 1:1 in rust to their API. This is still a work in progress and can find below in [Endpoints Progress](#endpoints-progress) the current status of the endpoints. If you do find any issues or have any suggestions please feel free to open an issue.  
 
 
 ## Getting Started
@@ -30,6 +30,7 @@ let wom_client = WomClient::new_with_key(api_key);
 ```
 
 ## Endpoints Progress
+Some may have cross over completion. For example you can get player name changes by username, but cannot submit request for a name change.
 * [x] [Players API](https://docs.wiseoldman.net/players-api/player-endpoints)
 * [ ] [Groups API](https://docs.wiseoldman.net/groups-api/group-endpoints)
 * [ ] [Competitions API](https://docs.wiseoldman.net/competitions-api/competition-endpoints)

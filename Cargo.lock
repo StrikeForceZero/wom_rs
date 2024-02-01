@@ -2192,6 +2192,7 @@ dependencies = [
  "httpmock",
  "reqwest",
  "serde",
+ "serde_json",
  "strum",
  "tokio",
 ]

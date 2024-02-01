@@ -41,7 +41,6 @@ pub enum PlayerStatus {
 
 /// [Country](https://docs.wiseoldman.net/players-api/player-type-definitions#enum-country)
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub enum Country {
     AD,
     AE,
@@ -416,6 +415,8 @@ pub struct PlayerArchive {
     pub restored_username: Option<String>,
     pub created_at: DateTime<Utc>,
     pub restored_at: Option<DateTime<Utc>>,
+    /// [Player Archive With Player](https://docs.wiseoldman.net/players-api/player-type-definitions#object-player-archive-with-player)
+    pub player: Option<Player>,
 }
 
 /// Same as [Player] but has changed to signify if the player was changed with assertion

@@ -5,9 +5,10 @@ use crate::models::competition::{
 use crate::models::global_enums::{Metric, Period};
 use crate::models::global_types::{PlayerId, Username};
 use crate::models::group::PlayerMembership;
+use crate::models::name::NameChange;
 use crate::models::player::{
-    Achievement, AchievementProgress, AssertPlayerType, Player, PlayerDetails, PlayerGain,
-    SnapShot, TimelineDatapoint,
+    Achievement, AchievementProgress, AssertPlayerType, Player, PlayerArchive, PlayerDetails,
+    PlayerGain, SnapShot, TimelineDatapoint,
 };
 use crate::{ApiEndpoint, Pagination, QueryParam, QueryParams};
 use anyhow::Result;
@@ -28,8 +29,8 @@ enum PlayerEndPoints {
     Records(Username),
     Snapshots(Username),
     SnapshotsTimeline(Username),
-    NameChange,
-    Archives,
+    NameChange(Username),
+    Archives(Username),
 }
 
 impl PlayerEndPoints {
@@ -89,7 +90,12 @@ impl PlayerEndPoints {
                     username
                 )
             }
-            _ => format!("{}", ApiEndpoint::Player.as_str()),
+            PlayerEndPoints::NameChange(username) => {
+                format!("{}/{}/names", ApiEndpoint::Player.as_str(), username)
+            }
+            PlayerEndPoints::Archives(username) => {
+                format!("{}/{}/archives", ApiEndpoint::Player.as_str(), username)
+            }
         }
     }
 }
@@ -458,7 +464,42 @@ impl PlayerClient {
         let result = self.client.get(full_url).send().await;
         handle_response::<Vec<TimelineDatapoint>>(result).await
     }
+
+    /// Get a player's name changes by username
+    /// [Get Player Name Changes](https://docs.wiseoldman.net/players-api/player-endpoints#get-player-name-changes)
+    pub async fn get_name_changes(
+        &self,
+        username: Username,
+    ) -> Result<Vec<NameChange>, anyhow::Error> {
+        let result = self
+            .client
+            .get(
+                self.get_url(PlayerEndPoints::NameChange(username), None)
+                    .as_str(),
+            )
+            .send()
+            .await;
+        handle_response::<Vec<NameChange>>(result).await
+    }
+
+    /// Get a player's archives by username
+    /// [Get Player Archives](https://docs.wiseoldman.net/players-api/player-endpoints#get-player-archives)
+    pub async fn get_archives(
+        &self,
+        username: Username,
+    ) -> Result<Vec<PlayerArchive>, anyhow::Error> {
+        let result = self
+            .client
+            .get(
+                self.get_url(PlayerEndPoints::Archives(username), None)
+                    .as_str(),
+            )
+            .send()
+            .await;
+        handle_response::<Vec<PlayerArchive>>(result).await
+    }
 }
+
 #[cfg(test)]
 mod tests {
     use crate::models::competition::CompetitionStatus;
@@ -999,5 +1040,50 @@ mod tests {
         assert!(result.is_ok());
         let snapshots = result.unwrap();
         assert_eq!(snapshots.len(), 3);
+    }
+
+    #[tokio::test]
+    async fn player_name_changes_test() {
+        let server = MockServer::start();
+        let mock = server.mock(|when, then| {
+            when.method(GET)
+                .path(format!("{}/IFat%20Fingers/names", BASE_URL));
+            then.status(200)
+                .header(CONTENT_TYPE, APPLICATION_JSON)
+                .body_from_file("./tests/mocks/player/player_name_changes.json");
+        });
+
+        let wom_client = WomClient::new_with_base_url(server.base_url().to_string(), None);
+        let result = wom_client
+            .player_client
+            .get_name_changes("IFat Fingers".to_string())
+            .await;
+
+        mock.assert();
+        assert!(result.is_ok());
+        result.unwrap();
+    }
+
+    #[tokio::test]
+    async fn player_archives_test() {
+        let server = MockServer::start();
+        let mock = server.mock(|when, then| {
+            when.method(GET)
+                .path(format!("{}/IFat%20Fingers/archives", BASE_URL));
+            then.status(200)
+                .header(CONTENT_TYPE, APPLICATION_JSON)
+                .body_from_file("./tests/mocks/player/player_archives.json");
+        });
+
+        let wom_client = WomClient::new_with_base_url(server.base_url().to_string(), None);
+        let result = wom_client
+            .player_client
+            .get_archives("IFat Fingers".to_string())
+            .await;
+
+        println!("{:?}", result);
+        mock.assert();
+        assert!(result.is_ok());
+        result.unwrap();
     }
 }
