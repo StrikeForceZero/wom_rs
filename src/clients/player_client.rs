@@ -6,7 +6,8 @@ use crate::models::global_enums::{Metric, Period};
 use crate::models::global_types::{PlayerId, Username};
 use crate::models::group::PlayerMembership;
 use crate::models::player::{
-    Achievement, AchievementProgress, AssertPlayerType, Player, PlayerDetails, PlayerGain, SnapShot,
+    Achievement, AchievementProgress, AssertPlayerType, Player, PlayerDetails, PlayerGain,
+    SnapShot, TimelineDatapoint,
 };
 use crate::{ApiEndpoint, Pagination, QueryParam, QueryParams};
 use anyhow::Result;
@@ -26,7 +27,7 @@ enum PlayerEndPoints {
     Gains(Username),
     Records(Username),
     Snapshots(Username),
-    SnapshotsTimeline,
+    SnapshotsTimeline(Username),
     NameChange,
     Archives,
 }
@@ -80,6 +81,13 @@ impl PlayerEndPoints {
             }
             PlayerEndPoints::Snapshots(username) => {
                 format!("{}/{}/snapshots", ApiEndpoint::Player.as_str(), username)
+            }
+            PlayerEndPoints::SnapshotsTimeline(username) => {
+                format!(
+                    "{}/{}/snapshots/timeline",
+                    ApiEndpoint::Player.as_str(),
+                    username
+                )
             }
             _ => format!("{}", ApiEndpoint::Player.as_str()),
         }
@@ -350,8 +358,9 @@ impl PlayerClient {
         handle_response::<Vec<crate::models::record::Record>>(result).await
     }
 
-    /// Get a player's snapshots by username
-    pub async fn get_snap_shots_by_period(
+    /// Get a player's snapshots by username and within a period
+    /// [Get Player Snapshots](https://docs.wiseoldman.net/players-api/player-endpoints#get-player-snapshots)
+    pub async fn get_snapshots_by_period(
         &self,
         username: Username,
         period: Period,
@@ -369,14 +378,94 @@ impl PlayerClient {
             .await;
         handle_response::<Vec<SnapShot>>(result).await
     }
-}
 
+    /// Get a player's snapshot by username with a start and end date
+    /// [Get Player Snapshots](https://docs.wiseoldman.net/players-api/player-endpoints#get-player-snapshots)
+    pub async fn get_snapshots_by_date(
+        &self,
+        username: Username,
+        start_date: DateTime<Utc>,
+        end_date: DateTime<Utc>,
+    ) -> Result<Vec<SnapShot>, anyhow::Error> {
+        let full_url = self.get_url(
+            PlayerEndPoints::Snapshots(username),
+            Some(vec![
+                (
+                    "startDate".to_string(),
+                    start_date.format("%Y-%m-%d %H:%M:%S").to_string(),
+                ),
+                (
+                    "endDate".to_string(),
+                    end_date.format("%Y-%m-%d %H:%M:%S").to_string(),
+                ),
+            ]),
+        );
+
+        let result = self.client.get(full_url).send().await;
+        handle_response::<Vec<SnapShot>>(result).await
+    }
+
+    /// Get a player's snapshots timeline by username and within a period
+    /// Get Player Snapshots Timeline
+    /// [Get Player Snapshots Timeline](https://docs.wiseoldman.net/players-api/player-endpoints#get-player-snapshots-timeline)
+    pub async fn get_snapshots_timeline(
+        &self,
+        username: Username,
+        metric: Metric,
+        period: Period,
+    ) -> Result<Vec<TimelineDatapoint>, anyhow::Error> {
+        let result = self
+            .client
+            .get(
+                self.get_url(
+                    PlayerEndPoints::SnapshotsTimeline(username),
+                    Some(vec![
+                        ("period".to_string(), period.as_str().to_string()),
+                        ("metric".to_string(), metric.to_string()),
+                    ]),
+                )
+                .as_str(),
+            )
+            .send()
+            .await;
+        handle_response::<Vec<TimelineDatapoint>>(result).await
+    }
+
+    ///Gets a player's snapshots timeline by username with a start and end date
+    /// [Get Player Snapshots Timeline](https://docs.wiseoldman.net/players-api/player-endpoints#get-player-snapshots-timeline)
+    pub async fn get_snapshots_timeline_by_date(
+        &self,
+        username: Username,
+        metric: Metric,
+        start_date: DateTime<Utc>,
+        end_date: DateTime<Utc>,
+    ) -> Result<Vec<TimelineDatapoint>, anyhow::Error> {
+        let full_url = self.get_url(
+            PlayerEndPoints::SnapshotsTimeline(username),
+            Some(vec![
+                (
+                    "startDate".to_string(),
+                    start_date.format("%Y-%m-%d %H:%M:%S").to_string(),
+                ),
+                (
+                    "endDate".to_string(),
+                    end_date.format("%Y-%m-%d %H:%M:%S").to_string(),
+                ),
+                ("metric".to_string(), metric.to_string()),
+            ]),
+        );
+
+        let result = self.client.get(full_url).send().await;
+        handle_response::<Vec<TimelineDatapoint>>(result).await
+    }
+}
 #[cfg(test)]
 mod tests {
     use crate::models::competition::CompetitionStatus;
     use crate::models::global_enums::Skill::Overall;
     use crate::models::global_enums::{Metric, Period};
     use crate::{Pagination, WomClient};
+    use chrono::TimeZone;
     use httpmock::prelude::*;
 
     const BASE_URL: &str = "/players";
@@ -797,27 +886,118 @@ mod tests {
         assert_eq!(records.len(), 4);
     }
 
-    // #[tokio::test]
-    // async fn player_snapshots_test() {
-    //     let server = MockServer::start();
-    //     let mock = server.mock(|when, then| {
-    //         when.method(GET)
-    //             .path(format!("{}/IFat%20Fingers/snapshots", BASE_URL));
-    //         then.status(200)
-    //             .header(CONTENT_TYPE, APPLICATION_JSON)
-    //             .body_from_file("./tests/mocks/player/player_snapshots.json");
-    //     });
-    //
-    //     let wom_client = WomClient::new_with_base_url(server.base_url().to_string(), None);
-    //     let result = wom_client
-    //         .player_client
-    //         .get_player_snap_shots("IFat Fingers".to_string())
-    //         .await;
-    //
-    //     mock.assert();
+    #[tokio::test]
+    async fn player_get_snapshots_by_period_test() {
+        let server = MockServer::start();
+        let mock = server.mock(|when, then| {
+            when.method(GET)
+                .path(format!("{}/IFat%20Fingers/snapshots", BASE_URL))
+                .query_param("period", "week");
+            then.status(200)
+                .header(CONTENT_TYPE, APPLICATION_JSON)
+                .body_from_file("./tests/mocks/player/player_snapshots.json");
+        });
 
-    //     assert!(result.is_ok());
-    //     let snapshots = result.unwrap();
-    //     assert_eq!(snapshots.len(), 1);
-    // }
+        let wom_client = WomClient::new_with_base_url(server.base_url().to_string(), None);
+        let result = wom_client
+            .player_client
+            .get_snapshots_by_period("IFat Fingers".to_string(), Period::Week)
+            .await;
+
+        mock.assert();
+
+        assert!(result.is_ok());
+        let snapshots = result.unwrap();
+        assert_eq!(snapshots.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn player_get_snapshots_by_date_test() {
+        let server = MockServer::start();
+        let mock = server.mock(|when, then| {
+            when.method(GET)
+                .path(format!("{}/IFat%20Fingers/snapshots", BASE_URL))
+                .query_param("startDate", "2021-01-01 00:00:00")
+                .query_param("endDate", "2021-01-07 00:00:00");
+            then.status(200)
+                .header(CONTENT_TYPE, APPLICATION_JSON)
+                .body_from_file("./tests/mocks/player/player_snapshots.json");
+        });
+
+        let wom_client = WomClient::new_with_base_url(server.base_url().to_string(), None);
+        let result = wom_client
+            .player_client
+            .get_snapshots_by_date(
+                "IFat Fingers".to_string(),
+                chrono::Utc.with_ymd_and_hms(2021, 1, 1, 0, 0, 0).unwrap(),
+                chrono::Utc.with_ymd_and_hms(2021, 1, 7, 0, 0, 0).unwrap(),
+            )
+            .await;
+
+        mock.assert();
+
+        assert!(result.is_ok());
+        let snapshots = result.unwrap();
+        assert_eq!(snapshots.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn player_get_snapshots_timeline_by_period_test() {
+        let server = MockServer::start();
+        let mock = server.mock(|when, then| {
+            when.method(GET)
+                .path(format!("{}/IFat%20Fingers/snapshots/timeline", BASE_URL))
+                .query_param("metric", "overall")
+                .query_param("period", "week");
+            then.status(200)
+                .header(CONTENT_TYPE, APPLICATION_JSON)
+                .body_from_file("./tests/mocks/player/player_snapshots_timeline.json");
+        });
+
+        let wom_client = WomClient::new_with_base_url(server.base_url().to_string(), None);
+        let result = wom_client
+            .player_client
+            .get_snapshots_timeline(
+                "IFat Fingers".to_string(),
+                Metric::Skill(Overall),
+                Period::Week,
+            )
+            .await;
+
+        mock.assert();
+        assert!(result.is_ok());
+        let snapshots = result.unwrap();
+        assert_eq!(snapshots.len(), 3);
+    }
+
+    #[tokio::test]
+    async fn player_get_snapshots_timeline_by_date_test() {
+        let server = MockServer::start();
+        let mock = server.mock(|when, then| {
+            when.method(GET)
+                .path(format!("{}/IFat%20Fingers/snapshots/timeline", BASE_URL))
+                .query_param("startDate", "2021-01-01 00:00:00")
+                .query_param("endDate", "2021-01-07 00:00:00")
+                .query_param("metric", "overall");
+            then.status(200)
+                .header(CONTENT_TYPE, APPLICATION_JSON)
+                .body_from_file("./tests/mocks/player/player_snapshots_timeline.json");
+        });
+
+        let wom_client = WomClient::new_with_base_url(server.base_url().to_string(), None);
+        let result = wom_client
+            .player_client
+            .get_snapshots_timeline_by_date(
+                "IFat Fingers".to_string(),
+                Metric::Skill(Overall),
+                chrono::Utc.with_ymd_and_hms(2021, 1, 1, 0, 0, 0).unwrap(),
+                chrono::Utc.with_ymd_and_hms(2021, 1, 7, 0, 0, 0).unwrap(),
+            )
+            .await;
+
+        mock.assert();
+        assert!(result.is_ok());
+        let snapshots = result.unwrap();
+        assert_eq!(snapshots.len(), 3);
+    }
 }

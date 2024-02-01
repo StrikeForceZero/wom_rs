@@ -597,3 +597,12 @@ pub struct GainProgress {
     pub start: f64,
     pub end: f64,
 }
+
+/// [Timeline Datapoint](https://docs.wiseoldman.net/players-api/player-type-definitions#object-timeline-datapoint)
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TimelineDatapoint {
+    pub value: f64,
+    pub rank: i64,
+    pub date: DateTime<Utc>,
+}

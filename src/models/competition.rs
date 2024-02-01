@@ -1,7 +1,6 @@
-use crate::models::global_enums::{Boss, Metric, Skill};
+use crate::models::global_enums::Metric;
 use crate::models::global_types::{CompetitionId, GroupId, PlayerId};
 use crate::models::group::Group;
-use crate::models::snapshot::SkillMetric;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 

@@ -1,6 +1,5 @@
 use convert_case::{Case, Casing};
 use serde::{Deserialize, Deserializer, Serialize};
-use std::str::FromStr;
 use strum::{AsRefStr, Display, EnumString};
 
 /// [Period](https://docs.wiseoldman.net/global-type-definitions#enum-period)

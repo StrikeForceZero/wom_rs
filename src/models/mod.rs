@@ -8,9 +8,11 @@ pub mod global_enums;
 pub mod global_types;
 /// Possible Responses found in [Group Types & Entities](https://docs.wiseoldman.net/groups-api/group-type-definitions)
 pub mod group;
+/// Possible Responses found in [Name Change Types & Entities](https://docs.wiseoldman.net/names-api/name-type-definitions)
+pub mod name;
 /// Possible Responses found in [Player Types & Entities](https://docs.wiseoldman.net/players-api/player-type-definitions)
 pub mod player;
 /// Possible Responses found in [Record Types & Entities](https://docs.wiseoldman.net/records-api/record-type-definitions)
 pub mod record;
-/// Mapping used for snapshots since they are a bit more complex
+/// Mapping used for snapshots since they are a bit more complex. Very similar to the [PlayerGain], but kept separate for clarity.
 pub mod snapshot;

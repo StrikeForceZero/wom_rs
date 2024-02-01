@@ -4,7 +4,8 @@
 
 A asynchronous rust wrapper for interacting with [Wise Old Man API](https://docs.wiseoldman.net/).
 
-The goal of wom_rs is to provide a 1:1 in rust to their API. 
+The goal of wom_rs is to provide a 1:1 in rust to their API. This is still a work in progress and can find below in [Endpoints Progress](#endpoints-progress) the current status of the endpoints. 
+
 
 ## Getting Started
 
@@ -27,3 +28,31 @@ let wom_client = WomClient::new();
 let api_key = std::env::var("WOM_API_KEY").unwrap();
 let wom_client = WomClient::new_with_key(api_key);
 ```
+
+## Endpoints Progress
+* [x] [Players API](https://docs.wiseoldman.net/players-api/player-endpoints)
+* [ ] [Groups API](https://docs.wiseoldman.net/groups-api/group-endpoints)
+* [ ] [Competitions API](https://docs.wiseoldman.net/competitions-api/competition-endpoints)
+* [ ] [Records API](https://docs.wiseoldman.net/records-api/record-endpoints)
+* [ ] [Deltas API](https://docs.wiseoldman.net/deltas-api/delta-endpoints)
+* [ ] [Name Change API](https://docs.wiseoldman.net/names-api/name-endpoints)
+* [ ] [Efficiency API](https://docs.wiseoldman.net/efficiency-api/efficiency-endpoints)
+* [ ] Full handle of errors
+  * [x] Not found should be properly handled
+  * ... More will appear as I find them
+
+## Project Layout
+
+### [Clients](./src/clients)
+Contains the clients for interacting with the API. Each of the above endpoints will have a client accessed from [WomClient](./src/lib.rs).
+
+### [Models](./src/models)
+Various models used to represent the data returned from the API. You will find that many of the responses handled in [models](./src/models) are very similar to each other. In the WOM API many responses are built off of each other.
+I did not find a good way to do this in rust. So I kept them separate for clarity.
+  
+Some of the models that may not be clear are:
+  - [error](./src/models/error.rs): Holds models for error responses from the API.
+  - [snapshot](./src/models/snapshot.rs): Holds models for the snapshot data returned from the API. This mimics very closely to [PlayerGain](./src/models/player.rs) but kept separate for clarity.
+
+### [Mock Responses](./test/mocks)
+Contains the mock responses for the tests. These are used to test the deserialization of the responses from the API. All examples are either from the real API or the examples provided in WOM fantastic API documentation.
