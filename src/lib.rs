@@ -35,7 +35,8 @@ pub struct WomClient {
     pub player_client: PlayerClient,
 }
 
-pub(crate) struct Pagination {
+/// Used for endpoints that take pagination
+pub struct Pagination {
     pub limit: Option<i32>,
     pub offset: Option<i32>,
 }

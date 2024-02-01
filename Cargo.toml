@@ -3,11 +3,17 @@ name = "wom_rs"
 version = "0.1.0"
 edition = "2021"
 authors = ["Bailey Townsend"]
+readme = "README.md"
+repository = "https://github.com/fatfingers23/wom_rs"
+homepage = "https://github.com/fatfingers23/wom_rs"
+documentation = "https://docs.rs/wom_rs"
+license = "MIT"
 description = "A rust api wrapper for the OSRS Wise Old Man API"
 keywords = ["OSRS", "WOM", "Wise", "Old", "Man"]
+categories = ["api-bindings", "asynchronous", "web-programming", "web-programming::http-client"]
 
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+name = "wom_rs"
 
 [dependencies]
 anyhow = "1.0.79"
