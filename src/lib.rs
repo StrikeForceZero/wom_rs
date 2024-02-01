@@ -129,7 +129,7 @@ pub(crate) mod helpers {
         }
     }
 
-    pub fn handle_empty_response(response: Result<Response, Error>) -> Result<(), Error> {
+    pub fn _handle_empty_response(response: Result<Response, Error>) -> Result<(), Error> {
         match response {
             Ok(_) => Ok(()),
             Err(err) => Err(err),

@@ -3,7 +3,7 @@ use crate::models::competition::{
     CompetitionStatus, PlayerCompetitionStanding, PlayerParticipation,
 };
 use crate::models::global_enums::{Metric, Period};
-use crate::models::global_types::{CompetitionId, PlayerId, Username};
+use crate::models::global_types::{PlayerId, Username};
 use crate::models::group::PlayerMembership;
 use crate::models::player::{
     Achievement, AchievementProgress, AssertPlayerType, Player, PlayerDetails, PlayerGain, SnapShot,
@@ -11,7 +11,6 @@ use crate::models::player::{
 use crate::{ApiEndpoint, Pagination, QueryParam, QueryParams};
 use anyhow::Result;
 use chrono::{DateTime, Utc};
-use std::fmt::Formatter;
 
 enum PlayerEndPoints {
     Search,
@@ -40,9 +39,6 @@ impl PlayerEndPoints {
             }
             PlayerEndPoints::Update(username) => {
                 format!("{}/{}", ApiEndpoint::Player.as_str(), username)
-            }
-            PlayerEndPoints::Snapshots(username) => {
-                format!("{}/{}/snapshots", ApiEndpoint::Player.as_str(), username)
             }
             PlayerEndPoints::AssertType(username) => {
                 format!("{}/{}/assert-type", ApiEndpoint::Player.as_str(), username)
@@ -81,6 +77,9 @@ impl PlayerEndPoints {
             }
             PlayerEndPoints::Records(username) => {
                 format!("{}/{}/records", ApiEndpoint::Player.as_str(), username)
+            }
+            PlayerEndPoints::Snapshots(username) => {
+                format!("{}/{}/snapshots", ApiEndpoint::Player.as_str(), username)
             }
             _ => format!("{}", ApiEndpoint::Player.as_str()),
         }
@@ -351,18 +350,25 @@ impl PlayerClient {
         handle_response::<Vec<crate::models::record::Record>>(result).await
     }
 
-    // /// Get a player's snapshots by username
-    // pub async fn get_player_snap_shots(
-    //     &self,
-    //     username: Username,
-    // ) -> Result<Vec<SnapShot>, anyhow::Error> {
-    //     let result = self
-    //         .client
-    //         .get(self.get_url(PlayerEndPoints::Snapshots(username)).as_str())
-    //         .send()
-    //         .await;
-    //     handle_response::<Vec<SnapShot>>(result).await
-    // }
+    /// Get a player's snapshots by username
+    pub async fn get_snap_shots_by_period(
+        &self,
+        username: Username,
+        period: Period,
+    ) -> Result<Vec<SnapShot>, anyhow::Error> {
+        let result = self
+            .client
+            .get(
+                self.get_url(
+                    PlayerEndPoints::Snapshots(username),
+                    Some(vec![("period".to_string(), period.as_str().to_string())]),
+                )
+                .as_str(),
+            )
+            .send()
+            .await;
+        handle_response::<Vec<SnapShot>>(result).await
+    }
 }
 
 #[cfg(test)]
