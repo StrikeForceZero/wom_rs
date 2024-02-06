@@ -10,6 +10,7 @@ use crate::models::player::{
     Achievement, AchievementProgress, AssertPlayerType, Player, PlayerArchive, PlayerDetails,
     PlayerGain, SnapShot, TimelineDatapoint,
 };
+use crate::models::record::Record;
 use crate::{ApiEndpoint, Pagination, QueryParam, QueryParams};
 use anyhow::Result;
 use chrono::{DateTime, Utc};
@@ -142,7 +143,7 @@ impl PlayerClient {
 
         let full_url = self.get_url(PlayerEndPoints::Search, Some(queries));
         let result = self.client.get(full_url.as_str()).send().await;
-        handle_response::<Vec<Player>>(result).await
+        handle_response(result).await
     }
 
     /// Sends a request to update the players hiscore data from the offical hiscores
@@ -150,7 +151,7 @@ impl PlayerClient {
     pub async fn update(&self, username: Username) -> Result<PlayerDetails, anyhow::Error> {
         let full_url = self.get_url(PlayerEndPoints::Update(username), None);
         let result = self.client.post(full_url.as_str()).send().await;
-        handle_response::<PlayerDetails>(result).await
+        handle_response(result).await
     }
 
     /// Asserts (and attempts to fix, if necessary) a player's game-mode type.
@@ -164,7 +165,7 @@ impl PlayerClient {
             )
             .send()
             .await;
-        handle_response::<AssertPlayerType>(result).await
+        handle_response(result).await
     }
 
     /// Get a player's details by username
@@ -178,7 +179,7 @@ impl PlayerClient {
             )
             .send()
             .await;
-        handle_response::<PlayerDetails>(result).await
+        handle_response(result).await
     }
 
     /// Get a player's details by player id
@@ -195,7 +196,7 @@ impl PlayerClient {
             )
             .send()
             .await;
-        handle_response::<PlayerDetails>(result).await
+        handle_response(result).await
     }
 
     /// Get a player's achievements by username
@@ -212,7 +213,7 @@ impl PlayerClient {
             )
             .send()
             .await;
-        handle_response::<Vec<Achievement>>(result).await
+        handle_response(result).await
     }
 
     /// Get a player's achievements progress by username
@@ -229,7 +230,7 @@ impl PlayerClient {
             )
             .send()
             .await;
-        handle_response::<Vec<AchievementProgress>>(result).await
+        handle_response(result).await
     }
 
     /// Get a player's competitions they have participated in by username
@@ -255,7 +256,7 @@ impl PlayerClient {
         );
 
         let result = self.client.get(full_url).send().await;
-        handle_response::<Vec<PlayerParticipation>>(result).await
+        handle_response(result).await
     }
 
     /// Get a player's competition standings by username
@@ -274,7 +275,7 @@ impl PlayerClient {
             )])
         );
         let result = self.client.get(full_url).send().await;
-        handle_response::<Vec<PlayerCompetitionStanding>>(result).await
+        handle_response(result).await
     }
 
     /// Get a player's group memberships by username
@@ -296,7 +297,7 @@ impl PlayerClient {
         );
 
         let result = self.client.get(full_url).send().await;
-        handle_response::<Vec<PlayerMembership>>(result).await
+        handle_response(result).await
     }
 
     /// Get a player's gains by username and period
@@ -311,7 +312,7 @@ impl PlayerClient {
             Some(vec![("period".to_string(), period.as_str().to_string())]),
         );
         let result = self.client.get(full_url).send().await;
-        handle_response::<PlayerGain>(result).await
+        handle_response(result).await
     }
 
     /// Get a player's gains by username plus start and end date
@@ -337,7 +338,7 @@ impl PlayerClient {
         );
 
         let result = self.client.get(full_url).send().await;
-        handle_response::<PlayerGain>(result).await
+        handle_response(result).await
     }
 
     /// Get a player's records by username
@@ -347,7 +348,7 @@ impl PlayerClient {
         username: Username,
         period: Option<Period>,
         metric: Option<Metric>,
-    ) -> Result<Vec<crate::models::record::Record>, anyhow::Error> {
+    ) -> Result<Vec<Record>, anyhow::Error> {
         let mut queries = Vec::new();
         if let Some(period) = period.clone() {
             queries.push(("period".to_string(), period.as_str().to_string()));
@@ -361,7 +362,7 @@ impl PlayerClient {
             .get(self.get_url(PlayerEndPoints::Records(username), Some(queries)))
             .send()
             .await;
-        handle_response::<Vec<crate::models::record::Record>>(result).await
+        handle_response(result).await
     }
 
     /// Get a player's snapshots by username and within a period
@@ -382,7 +383,7 @@ impl PlayerClient {
             )
             .send()
             .await;
-        handle_response::<Vec<SnapShot>>(result).await
+        handle_response(result).await
     }
 
     /// Get a player's snapshot by username with a start and end date
@@ -408,7 +409,7 @@ impl PlayerClient {
         );
 
         let result = self.client.get(full_url).send().await;
-        handle_response::<Vec<SnapShot>>(result).await
+        handle_response(result).await
     }
 
     /// Get a player's snapshots timeline by username and within a period
@@ -434,7 +435,7 @@ impl PlayerClient {
             )
             .send()
             .await;
-        handle_response::<Vec<TimelineDatapoint>>(result).await
+        handle_response(result).await
     }
 
     ///Gets a player's snapshots timeline by username with a start and end date
@@ -462,7 +463,7 @@ impl PlayerClient {
         );
 
         let result = self.client.get(full_url).send().await;
-        handle_response::<Vec<TimelineDatapoint>>(result).await
+        handle_response(result).await
     }
 
     /// Get a player's name changes by username
@@ -496,7 +497,7 @@ impl PlayerClient {
             )
             .send()
             .await;
-        handle_response::<Vec<PlayerArchive>>(result).await
+        handle_response(result).await
     }
 }
 

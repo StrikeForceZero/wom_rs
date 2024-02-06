@@ -321,7 +321,7 @@ pub struct Group {
 /// [Group Details](https://docs.wiseoldman.net/groups-api/group-type-definitions#object-group-details)
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct GroupDetails {
+pub struct GroupDetail {
     pub id: GroupId,
     pub name: String,
     pub clan_chat: Option<String>,
@@ -336,7 +336,7 @@ pub struct GroupDetails {
     pub updated_at: DateTime<Utc>,
     pub member_count: i64,
     pub memberships: Vec<GroupMemberShip>,
-    pub social_links: GroupSocialLinks,
+    pub social_links: Option<GroupSocialLinks>,
 }
 
 /// [Membership](https://docs.wiseoldman.net/groups-api/group-type-definitions#object-membership)
@@ -375,4 +375,57 @@ pub struct PlayerMembership {
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
     pub group: Group,
+}
+
+// [Group Member Fragment](https://docs.wiseoldman.net/groups-api/group-type-definitions#object-group-member-fragment)
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GroupMemberFragment {
+    pub username: PlayerId,
+    pub role: Option<GroupRole>,
+}
+
+/// [Body to create a new group](https://docs.wiseoldman.net/groups-api/group-endpoints#create-group)
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateGroupRequest {
+    pub name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub clan_chat: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub homeworld: Option<i64>,
+    pub members: Vec<GroupMemberFragment>,
+}
+
+impl CreateGroupRequest {
+    pub fn new(name: String) -> Self {
+        Self {
+            name,
+            clan_chat: None,
+            description: None,
+            homeworld: None,
+            members: vec![],
+        }
+    }
+
+    pub fn new_with_clan_chat(group_name: String, clan_chat: String) -> Self {
+        Self {
+            name: group_name,
+            clan_chat: Some(clan_chat),
+            description: None,
+            homeworld: None,
+            members: vec![],
+        }
+    }
+}
+
+/// Group Create Response
+/// [Create Group](https://docs.wiseoldman.net/groups-api/group-endpoints#create-group)
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GroupCreateResponse {
+    pub group: GroupDetail,
+    pub verification_code: String,
 }

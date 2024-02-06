@@ -1,4 +1,6 @@
+use crate::clients::group_client::GroupClient;
 use crate::clients::player_client::PlayerClient;
+use env_logger::Env;
 use reqwest::header::{HeaderMap, HeaderValue};
 
 /// Individual clients for each endpoint
@@ -20,12 +22,14 @@ static APP_USER_AGENT: &str = concat!(
 ///Wom endpoints
 pub(crate) enum ApiEndpoint {
     Player,
+    Group,
 }
 
 impl ApiEndpoint {
     pub fn as_str(&self) -> &str {
         match self {
             ApiEndpoint::Player => "/players",
+            ApiEndpoint::Group => "/groups",
         }
     }
 }
@@ -33,6 +37,7 @@ impl ApiEndpoint {
 /// Wise Old Man Client
 pub struct WomClient {
     pub player_client: PlayerClient,
+    pub group_client: GroupClient,
 }
 
 /// Used for endpoints that take pagination
@@ -70,9 +75,11 @@ impl WomClient {
     }
 
     fn new_wom_client(client: reqwest::Client, base_url: String) -> Self {
+        env_logger::init();
         let sub_client_base_url = base_url.clone();
         Self {
             player_client: PlayerClient::new(client.clone(), &*sub_client_base_url),
+            group_client: GroupClient::new(client, &*sub_client_base_url),
         }
     }
 
@@ -99,6 +106,7 @@ impl WomClient {
 pub(crate) mod helpers {
     use crate::models::error::ErrorResponse;
     use anyhow::anyhow;
+    use log::debug;
     use reqwest::{Error, Response, StatusCode};
     use serde::de::DeserializeOwned;
 
@@ -121,7 +129,17 @@ pub(crate) mod helpers {
                         Err(err) => Err(anyhow!(err)),
                     }
                 }
+                StatusCode::BAD_REQUEST => {
+                    debug!("{:?}", result);
+
+                    let error_body = result.json::<ErrorResponse>().await;
+                    match error_body {
+                        Ok(body) => Err(anyhow!(body.message)),
+                        Err(err) => Err(anyhow!(err)),
+                    }
+                }
                 _ => {
+                    debug!("{:?}", result);
                     let error_body = result.json::<ErrorResponse>().await;
                     match error_body {
                         Ok(body) => Err(anyhow!(body.message)),
