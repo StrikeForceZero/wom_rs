@@ -1,4 +1,5 @@
 use crate::models::global_types::PlayerId;
+use crate::models::player::Player;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
@@ -26,4 +27,5 @@ pub struct NameChange {
     pub resolved_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+    pub player: Option<Player>,
 }

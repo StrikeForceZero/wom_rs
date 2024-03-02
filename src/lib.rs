@@ -1,6 +1,5 @@
 use crate::clients::group_client::GroupClient;
 use crate::clients::player_client::PlayerClient;
-use env_logger::Env;
 use reqwest::header::{HeaderMap, HeaderValue};
 
 /// Individual clients for each endpoint
@@ -65,7 +64,7 @@ impl WomClient {
         match api_key {
             Some(key) => {
                 let mut headers = HeaderMap::new();
-                headers.insert("api-key", HeaderValue::from_str(&*key).unwrap());
+                headers.insert("x-api-key", HeaderValue::from_str(&*key).unwrap());
                 client.default_headers(headers)
             }
             None => client,
@@ -75,7 +74,8 @@ impl WomClient {
     }
 
     fn new_wom_client(client: reqwest::Client, base_url: String) -> Self {
-        env_logger::init();
+        let _ = env_logger::try_init();
+
         let sub_client_base_url = base_url.clone();
         Self {
             player_client: PlayerClient::new(client.clone(), &*sub_client_base_url),
