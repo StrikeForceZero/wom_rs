@@ -114,7 +114,7 @@ pub enum Skill {
 }
 
 /// [Boss](https://docs.wiseoldman.net/global-type-definitions#enum-boss)
-#[derive(Debug, Default, Clone, PartialEq, Serialize, Deserialize, EnumString, Display)]
+#[derive(Debug, Default, Copy, Clone, PartialEq, Serialize, Deserialize, EnumString, Display)]
 #[serde(rename_all = "snake_case")]
 pub enum Boss {
     #[default]

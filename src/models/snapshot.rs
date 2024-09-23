@@ -40,7 +40,7 @@ pub struct SkillMetric {
     pub ehp: f64,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub struct Bosses {
     pub abyssal_sire: BossMetric,
@@ -104,7 +104,7 @@ pub struct Bosses {
     pub zulrah: BossMetric,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BossMetric {
     pub metric: Boss,
