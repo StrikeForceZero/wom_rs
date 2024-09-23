@@ -318,11 +318,11 @@ pub struct SnapShotData {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SnapShot {
-    id: i64,
-    player_id: i64,
-    created_at: DateTime<Utc>,
-    imported_at: Option<DateTime<Utc>>,
-    data: SnapShotData,
+    pub id: i64,
+    pub player_id: i64,
+    pub created_at: DateTime<Utc>,
+    pub imported_at: Option<DateTime<Utc>>,
+    pub data: SnapShotData,
 }
 
 /// [Player](https://docs.wiseoldman.net/players-api/player-type-definitions#object-player)
@@ -380,29 +380,29 @@ pub struct PlayerDetails {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Achievement {
-    player_id: i64,
-    name: String,
-    metric: String,
-    measure: AchievementMeasure,
-    threshold: i64,
-    created_at: DateTime<Utc>,
-    accuracy: Option<i64>,
+    pub player_id: i64,
+    pub name: String,
+    pub metric: String,
+    pub measure: AchievementMeasure,
+    pub threshold: i64,
+    pub created_at: DateTime<Utc>,
+    pub accuracy: Option<i64>,
 }
 
 /// [Achievement Progress](https://docs.wiseoldman.net/players-api/player-type-definitions#object-achievement-progress)
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AchievementProgress {
-    player_id: PlayerId,
-    name: String,
-    metric: String,
-    measure: AchievementMeasure,
-    threshold: i64,
-    created_at: Option<DateTime<Utc>>,
-    accuracy: Option<i64>,
-    current_value: i64,
-    absolute_progress: f64,
-    relative_progress: f64,
+    pub player_id: PlayerId,
+    pub name: String,
+    pub metric: String,
+    pub measure: AchievementMeasure,
+    pub threshold: i64,
+    pub created_at: Option<DateTime<Utc>>,
+    pub accuracy: Option<i64>,
+    pub current_value: i64,
+    pub absolute_progress: f64,
+    pub relative_progress: f64,
 }
 
 /// [Player Archive](https://docs.wiseoldman.net/players-api/player-type-definitions#object-player-archive)
