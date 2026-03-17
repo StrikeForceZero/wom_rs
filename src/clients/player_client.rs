@@ -505,10 +505,11 @@ impl PlayerClient {
 mod tests {
     use crate::models::competition::CompetitionStatus;
     use crate::models::global_enums::Skill::Overall;
-    use crate::models::global_enums::{Metric, Period};
+    use crate::models::global_enums::{Activity, Metric, Period};
     use crate::{Pagination, WomClient};
     use chrono::TimeZone;
     use httpmock::prelude::*;
+    use std::fs;
 
     const BASE_URL: &str = "/players";
     const CONTENT_TYPE: &str = "content-type";
@@ -951,6 +952,46 @@ mod tests {
         assert!(result.is_ok());
         let snapshots = result.unwrap();
         assert_eq!(snapshots.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn player_get_snapshots_by_period_without_league_points_test() {
+        let mut snapshots: serde_json::Value = serde_json::from_str(
+            &fs::read_to_string("./tests/mocks/player/player_snapshots.json").unwrap(),
+        )
+        .unwrap();
+        snapshots[0]["data"]["activities"]
+            .as_object_mut()
+            .unwrap()
+            .remove("league_points");
+
+        let server = MockServer::start();
+        let mock = server.mock(|when, then| {
+            when.method(GET)
+                .path(format!("{}/IFat%20Fingers/snapshots", BASE_URL))
+                .query_param("period", "week");
+            then.status(200)
+                .header(CONTENT_TYPE, APPLICATION_JSON)
+                .body(serde_json::to_string(&snapshots).unwrap());
+        });
+
+        let wom_client = WomClient::new_with_base_url(server.base_url().to_string(), None);
+        let result = wom_client
+            .player_client
+            .get_snapshots_by_period("IFat Fingers".to_string(), Period::Week)
+            .await;
+
+        mock.assert();
+
+        assert!(result.is_ok());
+        let snapshots = result.unwrap();
+        assert_eq!(snapshots.len(), 1);
+        assert_eq!(
+            snapshots[0].data.activities.league_points.metric,
+            Activity::LeaguePoints
+        );
+        assert_eq!(snapshots[0].data.activities.league_points.score, -1);
+        assert_eq!(snapshots[0].data.activities.league_points.rank, -1);
     }
 
     #[tokio::test]

@@ -116,6 +116,7 @@ pub struct BossMetric {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub struct Activities {
+    #[serde(default = "default_league_points_activity_metric")]
     pub league_points: ActivityMetric,
     pub bounty_hunter_hunter: ActivityMetric,
     pub bounty_hunter_rogue: ActivityMetric,
@@ -138,6 +139,14 @@ pub struct ActivityMetric {
     pub metric: Activity,
     pub score: i64,
     pub rank: i64,
+}
+
+fn default_league_points_activity_metric() -> ActivityMetric {
+    ActivityMetric {
+        metric: Activity::LeaguePoints,
+        score: -1,
+        rank: -1,
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
